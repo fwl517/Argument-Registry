@@ -1,0 +1,27 @@
+{
+  "name": "political-society-db",
+  "version": "2.0.0",
+  "description": "Political Society Argument & Source Database Engine — Node.js + Express + PostgreSQL",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "migrate": "psql \"$DATABASE_URL\" -f db/schema.sql",
+    "seed-root": "node scripts/seed-root.js"
+  },
+  "dependencies": {
+    "argon2": "^0.41.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

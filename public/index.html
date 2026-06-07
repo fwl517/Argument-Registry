@@ -1,0 +1,121 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+  
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Argument Registry · <span>Society Name</span></title>
+  <meta name="description" content="A public registry of political arguments, evidence and sources." />
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body data-require-auth="false">
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.jpg" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <div class="page-head">
+      <p class="eyebrow">Public record</p>
+      <h1>The Argument &amp; Source Registry</h1>
+      <hr class="rule-brass" />
+      <p class="lede">Browse the society's catalogue of arguments, studies and source
+        material. Sign in to see members-only entries and to contribute.</p>
+    </div>
+
+    <div class="listing-layout">
+    <form id="filter-form" class="searchbar filter-rail" autocomplete="off" aria-label="Filter entries">
+      <div class="searchbar__main">
+        <label class="visually-hidden" for="q">Search</label>
+        <input class="input search-input" type="search" id="q" name="q"
+               placeholder="Search titles and summaries…" />
+      </div>
+
+      <div class="filter-grid">
+        <div class="field">
+          <label class="label" for="filter-topic">Topic</label>
+          <input class="input" type="text" id="filter-topic" name="topic" placeholder="Any topic" />
+        </div>
+        <div class="field">
+          <label class="label" for="filter-stance">Stance</label>
+          <select class="select" id="filter-stance" name="stance">
+            <option value="">Any</option>
+            <option value="Pro">Pro</option>
+            <option value="Con">Con</option>
+            <option value="Neutral/Background">Neutral / Background</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="filter-argtype">Argument type</label>
+          <select class="select" id="filter-argtype" name="argument_type">
+            <option value="">Any</option>
+            <option value="Study">Study</option>
+            <option value="Article">Article</option>
+            <option value="Raw Statistic">Raw Statistic</option>
+            <option value="Policy Paper">Policy Paper</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="filter-srctype">Source category</label>
+          <select class="select" id="filter-srctype" name="source_type">
+            <option value="">Any</option>
+            <option value="Our Party Platform">Our Party Platform</option>
+            <option value="Opposition Platform">Opposition Platform</option>
+            <option value="Academic">Academic</option>
+            <option value="News">News</option>
+            <option value="Original Society Material">Original Society Material</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="filter-source">Party / source</label>
+          <select class="select" id="filter-source" name="source_id">
+            <option value="">Any party</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="filter-keyword">Keyword</label>
+          <input class="input" type="text" id="filter-keyword" name="keyword" placeholder="e.g. housing" />
+        </div>
+        <div class="field">
+          <label class="label" for="filter-from">Added from</label>
+          <input class="input" type="date" id="filter-from" name="from" />
+        </div>
+        <div class="field">
+          <label class="label" for="filter-to">Added to</label>
+          <input class="input" type="date" id="filter-to" name="to" />
+        </div>
+      </div>
+
+      <div class="searchbar__foot">
+        <span class="result-count" id="result-count">Loading…</span>
+        <button class="btn btn--ghost btn--sm" type="button" id="clear-filters">Clear filters</button>
+      </div>
+    </form>
+    
+    <section id="entry-results" aria-live="polite"></section>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="container">Political Society · Argument &amp; Source Database</div>
+  </footer>
+
+  <script type="module" src="/js/listing.js"></script>
+</body>
+</html>

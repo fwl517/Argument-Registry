@@ -1,0 +1,186 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+  
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New entry · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.jpg" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <div id="not-found" class="empty-state hidden">
+      <h3>Entry not found</h3>
+      <p class="muted">It may have been removed.</p>
+      <p class="mb-0"><a class="btn btn--ghost btn--sm" href="/dashboard.html">Back to dashboard</a></p>
+    </div>
+
+    <div id="form-card">
+      <div class="page-head">
+        <p class="eyebrow" id="form-eyebrow">Contribute</p>
+        <h1 id="form-title">New entry</h1>
+        <hr class="rule-brass" />
+        <p class="lede">Record an argument, study, statistic or source. Provide either an
+          external link or upload a file (E.g. PDF/txt/png/markdown/etc) — at least one is required.</p>
+      </div>
+
+      <form id="entry-form" class="panel panel--pad-lg" autocomplete="off">
+        <div class="field field--full">
+          <label for="f-title">Title</label>
+          <input class="input" type="text" id="f-title" name="title" maxlength="300"
+                 placeholder="A concise, searchable headline" />
+          <div class="field-error"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-topic">Topic</label>
+            <input class="input" type="text" id="f-topic" name="topic" maxlength="200"
+                   placeholder="e.g. Housing policy" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="f-date">Date published</label>
+            <input class="input" type="date" id="f-date" name="date_published" />
+            <div class="hint">Optional — when the source was published.</div>
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field">
+            <label for="f-stance">Stance</label>
+            <select class="select" id="f-stance" name="stance"></select>
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="f-argtype">Argument type</label>
+            <select class="select" id="f-argtype" name="argument_type"></select>
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field">
+            <label for="f-srctype">Source category</label>
+            <select class="select" id="f-srctype" name="source_type"></select>
+            <div class="hint">What kind of document this is.</div>
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="f-source">Party / source</label>
+            <div class="source-select-wrap">
+              <select class="select" id="f-source" name="source_id"></select>
+              <div class="row row--wrap">
+                <button class="linkbtn text-sm" type="button" id="add-source-toggle">+ Add a new source</button>
+              </div>
+              <div class="source-preview" id="source-preview"></div>
+            </div>
+            <div class="field-error"></div>
+          </div>
+        </div>
+
+        <!-- Inline add-source mini form -->
+        <div class="panel hidden" id="add-source-panel">
+          <h4>Add a new party / source</h4>
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-source-name">Name</label>
+              <input class="input" type="text" id="new-source-name" maxlength="120"
+                     placeholder="e.g. Restore Britain" />
+            </div>
+            <div class="field">
+              <label for="new-source-colour">Badge colour</label>
+              <div class="colour-field">
+                <input type="color" id="new-source-colour" value="#6B7280" />
+                <span class="hint mb-0">Text colour is chosen automatically for contrast.</span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn btn--sm" type="button" id="new-source-save">Save source</button>
+            <button class="linkbtn text-sm" type="button" id="new-source-cancel">Cancel</button>
+          </div>
+        </div>
+
+        <div class="field field--full mt-5">
+          <label for="f-gist">Summary / gist</label>
+          <textarea class="textarea" id="f-gist" name="gist"
+                    placeholder="Summarise the argument or finding in a few sentences."></textarea>
+          <div class="field-error"></div>
+        </div>
+
+        <div class="field field--full">
+          <label for="f-link">External link</label>
+          <input class="input" type="url" id="f-link" name="link"
+                 placeholder="https://… (or attach a file below)" />
+          <div class="field-error"></div>
+        </div>
+
+        <div class="field field--full">
+          <label for="f-file">Attach a file</label>
+          <input class="input" type="file" id="f-file" name="file"
+                 accept=".png,.jpg,.jpeg,.gif,.webp,.avif,.bmp,.tif,.tiff,.pdf,.txt,.md,.markdown,.rtf,.csv,.tsv,.json,.xml,.yaml,.yml,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp" />
+          <div class="hint">Images, PDF, text/Markdown and common document types, up to 50&nbsp;MB. <span id="file-info"></span></div>
+        </div>
+
+        <div class="field field--full">
+          <label for="f-note">…or write the information here</label>
+          <textarea class="textarea" id="f-note" name="note_text"
+                    placeholder="Type or paste text. If you don't attach a file or link, this is saved as a .md file."></textarea>
+          <div class="hint">Optional — used only when no file is attached.</div>
+        </div>
+
+        <div class="field field--full">
+          <label class="label">Keywords</label>
+          <div class="pill-input" id="keyword-input">
+            <input type="text" id="f-keyword-input" placeholder="Type a keyword, press Enter" />
+          </div>
+          <div class="hint">Press Enter or comma to add each tag.</div>
+        </div>
+
+        <hr />
+
+        <div class="checkrow">
+          <input type="checkbox" id="f-private" name="is_private" />
+          <div>
+            <label for="f-private">Members only</label>
+            <div class="hint">Hide this entry from the public registry.</div>
+          </div>
+        </div>
+
+        <div class="checkrow mt-4">
+          <input type="checkbox" id="f-anon" name="anonymise_uploader" />
+          <div>
+            <label for="f-anon">Attribute anonymously</label>
+            <div class="hint" id="anon-hint">Show “Anonymous Member” instead of your name on this entry.</div>
+          </div>
+        </div>
+
+        <div class="row mt-6">
+          <button class="btn" type="button" id="submit-btn">Create entry</button>
+          <a class="linkbtn text-sm" href="/dashboard.html">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script type="module" src="/js/upload.js"></script>
+</body>
+</html>

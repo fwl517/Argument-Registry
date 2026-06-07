@@ -1,0 +1,125 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+  
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Members · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.jpg" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container container--wide page">
+    <div class="page-head">
+      <p class="eyebrow">Administration</p>
+      <h1>Members</h1>
+      <hr class="rule-brass" />
+      <p class="lede" id="admin-scope">Manage member accounts and permissions.</p>
+    </div>
+
+    <!-- Temporary-password banner appears here -->
+    <div id="temp-pw"></div>
+
+    <!-- Create a member -->
+    <section class="panel mt-5">
+      <h2>Add a member</h2>
+      <p class="muted text-sm">A temporary password is generated; the new member must
+        change it on first sign-in.</p>
+      <form id="create-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label for="c-username">Username</label>
+            <input class="input" type="text" id="c-username" name="username"
+                   autocapitalize="none" spellcheck="false" maxlength="100"
+                   placeholder="e.g. j.smith" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="c-perm">Permission</label>
+            <select class="select" id="c-perm" name="permission"></select>
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="c-role">Society role</label>
+            <select class="select" id="c-role" name="society_role"></select>
+            <div class="field-error"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="create-btn">Create account</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Member list -->
+    <section class="mt-6">
+      <h2>All members</h2>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Permission</th>
+              <th>Society role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="user-rows">
+            <tr><td colspan="6" class="muted">Loading members…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Transfer Crown (Root only) -->
+    <section class="panel mt-6 hidden" id="crown-panel">
+      <h2>Transfer Root</h2>
+      <div class="alert alert--warn">
+        Transferring Root hands the highest level of control to another member and
+        immediately demotes you to Admin. This cannot be undone except by the new Root.
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="crown-target">New Root</label>
+          <select class="select" id="crown-target"></select>
+        </div>
+        <div class="field">
+          <label for="crown-confirm">Type TRANSFER to confirm</label>
+          <input class="input" type="text" id="crown-confirm" placeholder="TRANSFER"
+                 autocapitalize="characters" spellcheck="false" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn btn--danger" type="button" id="crown-btn">Transfer Root</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="container">Political Society · Argument &amp; Source Database</div>
+  </footer>
+
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

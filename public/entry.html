@@ -1,0 +1,89 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+  
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entry · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.jpg" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <!-- Loading -->
+    <div id="entry-loading" class="loading">Loading entry…</div>
+
+    <!-- Not found / error -->
+    <div id="entry-error" class="empty-state hidden">
+      <h3>Entry unavailable</h3>
+      <p class="muted" id="entry-error-msg">This entry could not be found.</p>
+      <p class="mb-0"><a class="btn btn--ghost btn--sm" href="/index.html">Back to the registry</a></p>
+    </div>
+
+    <!-- Detail -->
+    <article id="entry-view" class="hidden">
+      <p><button class="linkbtn" type="button" id="back-link">← Back</button></p>
+
+      <header class="detail-head">
+        <div class="detail-badges" id="detail-badges"></div>
+        <p class="eyebrow" id="detail-topic"></p>
+        <h1 class="detail-title" id="detail-title"></h1>
+        <div class="row row--wrap" id="owner-actions"></div>
+      </header>
+
+      <div class="detail-grid">
+        <!-- LEFT — summary, file preview, compact details & keywords -->
+        <div class="stack-lg">
+          <section class="panel">
+            <h2>Summary</h2>
+            <div class="row row--wrap" id="detail-actions"></div>
+            <div class="gist-block mt-4" id="detail-gist"></div>
+
+            <!-- Inline file preview (hidden until a previewable file loads) -->
+            <div class="file-preview mt-5 hidden" id="detail-preview"></div>
+
+            <!-- Details, folded in minimally -->
+            <dl class="meta-inline mt-5" id="detail-meta"></dl>
+
+            <!-- Keywords, folded in minimally -->
+            <div class="keyword-row keyword-row--inline mt-4" id="detail-keywords"></div>
+          </section>
+        </div>
+
+        <!-- RIGHT — clash map as colour-coded, collapsible cards -->
+        <!-- RIGHT — clash relations as solid colour-coded cards -->
+        <aside class="stack-lg">
+          <div class="clash-map" id="clash-map"></div>
+
+          <section id="relation-editor"></section>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-foot">
+    <div class="container">Political Society · Argument &amp; Source Database</div>
+  </footer>
+
+  <script type="module" src="/js/entry.js"></script>
+</body>
+</html>

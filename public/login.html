@@ -1,0 +1,65 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+  
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.jpg" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav">
+        <a class="nav-link" href="/index.html">Browse</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="auth-wrap">
+    <main class="auth-card">
+      <p class="eyebrow">Members only</p>
+      <h1>Sign in</h1>
+      <hr class="rule-brass" />
+
+      <div class="alert alert--error hidden" id="login-error" role="alert"></div>
+
+      <form id="login-form" autocomplete="on">
+        <div class="field">
+          <label for="username">Username</label>
+          <input class="input" type="text" id="username" name="username"
+                 autocomplete="username" autocapitalize="none" spellcheck="false" required />
+          <div class="field-error"></div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" type="password" id="password" name="password"
+                 autocomplete="current-password" required />
+          <div class="field-error"></div>
+        </div>
+        <button class="btn btn--block" type="button" id="login-btn">Sign in</button>
+      </form>
+
+      <p class="muted text-sm mt-5 mb-0 center">
+        New members receive a temporary password from a committee administrator.
+      </p>
+    </main>
+  </div>
+
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>
