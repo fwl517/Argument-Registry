@@ -63,6 +63,11 @@
             <select class="select" id="c-role" name="society_role"></select>
             <div class="field-error"></div>
           </div>
+          <div class="field">
+            <label for="c-group">Group</label>
+            <select class="select" id="c-group" name="group_id"></select>
+            <div class="field-error"></div>
+          </div>
         </div>
         <div class="row">
           <button class="btn" type="button" id="create-btn">Create account</button>
@@ -72,7 +77,11 @@
 
     <!-- Member list -->
     <section class="mt-6">
-      <h2>All members</h2>
+      <div class="row row--between member-list-head">
+        <h2 class="m-0">All members</h2>
+        <input class="input member-search" type="search" id="member-search"
+               placeholder="Search members…" autocomplete="off" />
+      </div>
       <div class="table-wrap">
         <table class="data">
           <thead>
@@ -80,13 +89,65 @@
               <th>Member</th>
               <th>Permission</th>
               <th>Society role</th>
+              <th>Group</th>
               <th>Status</th>
               <th>Joined</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="user-rows">
-            <tr><td colspan="6" class="muted">Loading members…</td></tr>
+            <tr><td colspan="7" class="muted">Loading members…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Manage groups (Root only) -->
+    <section class="panel mt-6 hidden" id="groups-panel">
+      <h2>Manage groups</h2>
+      <p class="muted text-sm">Create partner groups for other societies, set a
+        member quota, and archive groups that are no longer active. The home
+        group cannot be archived or deleted.</p>
+
+      <form id="group-create-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label for="g-name">Group name</label>
+            <input class="input" type="text" id="g-name" name="name"
+                   maxlength="100" placeholder="e.g. Liberal Democrats Society" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="g-colour">Pill colour (hex)</label>
+            <input class="input" type="text" id="g-colour" name="colour"
+                   maxlength="7" placeholder="#1B3A6B" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="g-quota">Member quota</label>
+            <input class="input" type="number" id="g-quota" name="member_quota"
+                   min="1" placeholder="Unlimited" />
+            <div class="field-error"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="g-create-btn">Create group</button>
+        </div>
+      </form>
+
+      <div class="table-wrap mt-4">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Members</th>
+              <th>Quota</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="group-rows">
+            <tr><td colspan="5" class="muted">Loading groups…</td></tr>
           </tbody>
         </table>
       </div>

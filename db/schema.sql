@@ -74,7 +74,88 @@ CREATE TYPE t_relation AS ENUM (
 
 
 -- ================================================================
--- SECTION 2 — USERS
+-- SECTION 2 — GROUPS (affiliations / partner societies)
+-- ================================================================
+--
+-- Groups model the society or organisation a user belongs to. Exactly one
+-- group has is_home = TRUE — that's the host society, whose Admins have
+-- platform-wide reach. Every other group is a partner; its Admins are
+-- scoped to their own group's members and entries.
+--
+-- The Independent group is seeded alongside the home group as a catch-all
+-- for unaffiliated individuals. It carries no group-admins by convention.
+--
+-- Lifecycle: Root can archive a group (soft, reversible) or hard-delete it
+-- (FK ON DELETE RESTRICT forces the group to be empty first). The home group
+-- itself can never be archived or deleted.
+
+CREATE TABLE groups (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            VARCHAR(100) NOT NULL UNIQUE,
+    colour          VARCHAR(7)   NOT NULL DEFAULT '#6B7280',
+    text_colour     VARCHAR(7)   NOT NULL DEFAULT '#FFFFFF',
+    is_home         BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_archived     BOOLEAN      NOT NULL DEFAULT FALSE,
+    member_quota    INTEGER,                            -- NULL = unlimited
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_member_quota_positive
+        CHECK (member_quota IS NULL OR member_quota > 0)
+);
+
+COMMENT ON TABLE  groups               IS 'Affiliations / partner societies that users belong to.';
+COMMENT ON COLUMN groups.is_home       IS 'TRUE for the singular host group — its Admins have cross-group reach.';
+COMMENT ON COLUMN groups.is_archived   IS 'TRUE freezes the group: no new users, no name/quota edits. Existing members can still sign in.';
+COMMENT ON COLUMN groups.member_quota  IS 'NULL = unlimited. Counts only is_active = TRUE rows.';
+
+CREATE INDEX idx_groups_home     ON groups(is_home);
+CREATE INDEX idx_groups_archived ON groups(is_archived);
+
+-- Seed: the host group and the catch-all Independent group. Both seeded
+-- with NULL quota; Root can tighten the Independent cap later if desired.
+INSERT INTO groups (name, colour, text_colour, is_home) VALUES
+    ('Home Society', '#1B3A6B', '#FFFFFF', TRUE),
+    ('Independent',  '#6B7280', '#FFFFFF', FALSE);
+
+-- Deferred singleton: paralleling the Root user singleton.
+CREATE OR REPLACE FUNCTION fn_check_home_group_singleton()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE v_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM groups WHERE is_home = TRUE;
+    IF v_count != 1 THEN
+        RAISE EXCEPTION 'HOME_GROUP_SINGLETON_VIOLATION: count is %', v_count;
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+CREATE CONSTRAINT TRIGGER trg_home_group_singleton
+    AFTER INSERT OR UPDATE OR DELETE ON groups
+    DEFERRABLE INITIALLY DEFERRED
+    FOR EACH ROW EXECUTE FUNCTION fn_check_home_group_singleton();
+
+-- The home group cannot be archived or deleted.
+CREATE OR REPLACE FUNCTION fn_protect_home_group()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'DELETE' AND OLD.is_home THEN
+        RAISE EXCEPTION 'HOME_GROUP_PROTECTED: cannot delete the home group.';
+    END IF;
+    IF TG_OP = 'UPDATE' AND OLD.is_home AND NEW.is_archived THEN
+        RAISE EXCEPTION 'HOME_GROUP_PROTECTED: cannot archive the home group.';
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+CREATE TRIGGER trg_protect_home_group
+    BEFORE UPDATE OR DELETE ON groups
+    FOR EACH ROW EXECUTE FUNCTION fn_protect_home_group();
+
+
+-- ================================================================
+-- SECTION 3 — USERS
 -- ================================================================
 
 CREATE TABLE users (
@@ -83,11 +164,14 @@ CREATE TABLE users (
     password_hash   VARCHAR(255)      NOT NULL,
     permission      t_permission      NOT NULL DEFAULT 'Read',
     society_role    t_society_role    NOT NULL DEFAULT 'Member',
+    group_id        UUID              NOT NULL REFERENCES groups(id) ON DELETE RESTRICT,
     is_active       BOOLEAN           NOT NULL DEFAULT TRUE,
     force_reset     BOOLEAN           NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
     created_by      UUID              REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_users_group ON users(group_id);
 
 COMMENT ON COLUMN users.password_hash  IS 'Argon2id hash only. Plaintext never stored.';
 COMMENT ON COLUMN users.force_reset    IS 'Blocks all routes except /reset-password until cleared.';
@@ -161,7 +245,7 @@ $$;
 
 
 -- ================================================================
--- SECTION 3 — SESSIONS
+-- SECTION 4 — SESSIONS
 -- ================================================================
 
 CREATE TABLE sessions (
@@ -181,7 +265,7 @@ CREATE INDEX idx_sessions_expiry ON sessions(expires_at);
 
 
 -- ================================================================
--- SECTION 4 — SOURCES
+-- SECTION 5 — SOURCES
 -- Sources identify the specific party or organisation behind a
 -- piece of material. Distinct from source_type, which is the
 -- category (e.g. "Academic", "News"). Sources can be preset
@@ -239,7 +323,7 @@ CREATE TRIGGER trg_block_preset_source_deletion
 
 
 -- ================================================================
--- SECTION 5 — ENTRIES (Argument Matrix)
+-- SECTION 6 — ENTRIES (Argument Matrix)
 -- ================================================================
 
 CREATE TABLE entries (
@@ -258,6 +342,7 @@ CREATE TABLE entries (
     uploader_id              UUID              REFERENCES users(id) ON DELETE RESTRICT,
     foreign_uploader_name    VARCHAR(100),
     foreign_uploader_role    t_society_role,
+    foreign_uploader_group   VARCHAR(100),
     anonymise_uploader       BOOLEAN           NOT NULL DEFAULT FALSE,
     created_at               TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
     updated_at               TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
@@ -284,8 +369,9 @@ COMMENT ON COLUMN entries.source_type IS 'Category of the source material (what 
 COMMENT ON COLUMN entries.source_id   IS 'Specific party or organisation. FK to sources table. Nullable.';
 COMMENT ON COLUMN entries.local_path  IS 'Relative path from FILE_STORE_PATH root. Served via /api/files only.';
 COMMENT ON COLUMN entries.anonymise_uploader IS 'When TRUE, server scrubs identity before JSON serialisation.';
-COMMENT ON COLUMN entries.foreign_uploader_name IS 'Display-only uploader name for entries imported from another instance. Never references a real user account.';
-COMMENT ON COLUMN entries.foreign_uploader_role IS 'Display-only society role accompanying foreign_uploader_name.';
+COMMENT ON COLUMN entries.foreign_uploader_name  IS 'Display-only uploader name for entries imported from another instance. Never references a real user account.';
+COMMENT ON COLUMN entries.foreign_uploader_role  IS 'Display-only society role accompanying foreign_uploader_name.';
+COMMENT ON COLUMN entries.foreign_uploader_group IS 'Display-only group name (the source instance''s society/affiliation). Never references a real groups row.';
 COMMENT ON CONSTRAINT chk_link_or_local      ON entries IS 'Every entry must have at least a URL or a local file.';
 COMMENT ON CONSTRAINT chk_uploader_identity  ON entries IS 'Exactly one of real uploader, foreign uploader, or anonymous — never two at once.';
 
@@ -341,7 +427,7 @@ CREATE INDEX idx_entries_created   ON entries(created_at);
 
 
 -- ================================================================
--- SECTION 6 — KEYWORDS / TAGS
+-- SECTION 7 — KEYWORDS / TAGS
 -- ================================================================
 
 CREATE TABLE keywords (
@@ -362,7 +448,7 @@ CREATE INDEX idx_ekw_entry   ON entry_keywords(entry_id);
 
 
 -- ================================================================
--- SECTION 7 — ARGUMENT RELATIONS (Clash Map)
+-- SECTION 8 — ARGUMENT RELATIONS (Clash Map)
 -- Directional. A → B means "A [relation_type] B".
 -- Inverse ("B [Updated By] A") is derived at query time.
 -- ================================================================
@@ -388,7 +474,7 @@ CREATE INDEX idx_rel_target ON argument_relations(target_id);
 
 
 -- ================================================================
--- SECTION 8 — INITIAL ROOT SEED
+-- SECTION 9 — INITIAL ROOT SEED
 -- ================================================================
 --
 -- Do NOT hand-edit a hash in here. Instead run:

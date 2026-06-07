@@ -105,6 +105,19 @@ export function privateBadge() {
   return el('span', { class: 'badge badge--private', text: 'Members only' });
 }
 
+/**
+ * Group affiliation badge. Mirrors sourceTag (DB-driven colour); if the group
+ * has no colour (foreign-imported entries that only carry the name), falls
+ * back to the default `.badge--group` styling defined in CSS.
+ */
+export function groupTag(group) {
+  if (!group || !group.name) return null;
+  const span = el('span', { class: 'badge badge--group', text: group.name });
+  if (group.colour) span.style.backgroundColor = group.colour;
+  if (group.text_colour) span.style.color = group.text_colour;
+  return span;
+}
+
 /* — Toasts ————————————————————————————————————————————————— */
 
 function toastRoot() {

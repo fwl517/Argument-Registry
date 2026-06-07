@@ -16,8 +16,8 @@ original creator present**. Keep it somewhere safe alongside the project files.
 3. [Part A — Installing the system, step by step](#part-a--installing-the-system-step-by-step)
 4. [Part B — Where everything is stored](#part-b--where-everything-is-stored)
 5. [Part C — Backing up and restoring (read this)](#part-c--backing-up-and-restoring-read-this)
-6. [Part D — Using the system (end-user guide)](#part-d--using-the-system-end-user-guide)
-7. [Part E — Running the society (admin guide)](#part-e--running-the-society-admin-guide)
+6. [Part D — Inviting other societies (groups)](#part-d--inviting-other-societies-groups)
+7. [Part E — Customisation](#part-e--customisation)
 8. [Part F — Keeping it running and fixing problems](#part-f--keeping-it-running-and-fixing-problems)
 9. [Glossary](#glossary)
 
@@ -220,8 +220,10 @@ in a public place, and never upload it anywhere.
 
 ### Step 7 — Build the database structure
 
-The database exists but is empty. This command creates all the tables and the 13
-preset UK party/source presets:
+The database exists but is empty. This command creates all the tables, the 13
+preset UK party/source presets, and the two seeded groups (the **home group**
+that will be your own society, and an **Independent** catch-all group for
+unaffiliated members):
 
 ```bash
 npm run migrate
@@ -266,6 +268,11 @@ npm run seed-root
 This prints a **one-time temporary password** in the terminal. **Copy it
 immediately and keep it safe** — it is shown only once. You can optionally name
 the account, e.g. `node scripts/seed-root.js chair` to call it "chair".
+
+The Root account is automatically placed in the home group seeded by Step 7.
+Once you sign in for the first time, you can rename the home group to your
+actual society name and pick a pill colour — find the **Manage groups** panel
+on the admin page (Root-only).
 
 ### Step 10 — Start the website
 
@@ -450,7 +457,45 @@ attachment is broken.
 
 ---
 
-## Part D — Customisation
+## Part D — Inviting other societies (groups)
+
+The database supports **multi-society collaboration**. Out of the box you get
+a single home group (your society) and a catch-all **Independent** group. To
+add a partner society:
+
+1. Sign in as Root and go to `/admin.html`.
+2. In the **Manage groups** panel, fill in the partner's name, choose a pill
+   colour, and optionally set a **member quota** (a maximum number of active
+   accounts that group is allowed). Leave the quota blank for unlimited.
+3. Once the group is created, hand its first admin account over to the partner
+   by creating a new user with permission **Admin** and the new group selected.
+   That partner Admin can then create their own Read/Write members within
+   their group, up to the quota.
+
+The partner Admins **cannot** see your home members or anyone else's group;
+they can only manage their own roster and their own entries. Only **home-group
+Admins** (your society's Admins) can see across every group, promote anyone to
+Admin, or move members between groups.
+
+### Archiving and deleting partner groups
+
+When a partnership ends:
+
+- **Archive** the group from the same panel. Archiving freezes the group — no
+  new accounts, no edits — while letting existing members still sign in to
+  view their historic entries. This is reversible: Root can unarchive at any
+  time.
+- **Delete** the group if you want to wipe the affiliation entirely. The
+  system refuses deletion while the group still has members, so reassign or
+  remove them first (Root can move members to the Independent group, or
+  delete them outright). The home group itself can never be deleted or
+  archived.
+
+A partner backup file (`Download backup` zip, Part C) restored onto a fresh
+system carries the full group structure across, including partner Admins and
+their accounts.
+
+## Part E — Customisation
 
 To change the basic design elements of the system (such as the logo, colour scheme and society name) some files have to be edited slightly.
 
@@ -509,7 +554,7 @@ The main variable you would most likely want to change are the ones shown above.
 
 ---
 
-## Part E — Keeping it running and fixing problems
+## Part F — Keeping it running and fixing problems
 
 ### Is it alive?
 
@@ -579,7 +624,11 @@ When the creator (or a successor) provides updated project files:
 - **Society role** — a descriptive label (President, Treasurer, etc.), separate
   from permissions.
 - **Clash map** — the network of directional links between entries.
-- **Anonymous entry** — an entry whose author is hidden as "Anonymous Member".
+- **Anonymous entry** — an entry whose author's *name* is hidden as "Anonymous Member". The contributing group is still shown.
+- **Group / affiliation** — which society a user belongs to. The home group (your own society) plus any partner groups Root has invited.
+- **Home group** — the singular founding-society group. Its Admins reach every account in every group.
+- **Member quota** — the maximum number of active accounts a group is allowed. Set by Root per group; unlimited if left blank.
+- **Archived group** — a partner group frozen by Root: no new accounts and no edits, but existing members can still sign in.
 - **Backup** — a saved copy of the database and files you can restore from.
 - **Process manager (PM2)** — a tool that keeps the program running and restarts
   it automatically.

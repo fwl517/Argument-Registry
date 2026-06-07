@@ -7,12 +7,13 @@
  */
 
 // admin.js — member management. Lists users, supports inline edit / force-reset /
-// delete (permission-gated), creating accounts, and the Root-only Transfer Crown.
-// The API enforces every rule; the UI gating here is a convenience.
+// delete (permission-gated), creating accounts, and the Root-only Transfer Crown
+// and group-management panels. The API enforces every rule; the UI gating here
+// is a convenience.
 
 import { apiFetch, errorMessage } from './api.js';
 import {
-  $, el, clear, esc, formatShortDate, toast, showFieldErrors,
+  $, el, clear, esc, formatShortDate, toast, showFieldErrors, groupTag,
 } from './utils.js';
 import { bootstrap, hasPermission } from './auth.js';
 
@@ -22,17 +23,42 @@ const SOCIETY_ROLES = [
 
 let session = null;
 let users = [];
+let groups = [];
+let userSearchTerm = '';
 
-/* — Capability helper ————————————————————————————————————— */
+/* — Capability helpers ——————————————————————————————————————— */
+
+function isHomeAdmin() {
+  return hasPermission(session, 'Admin') && session?.is_home_group === true;
+}
+function isRoot() {
+  return hasPermission(session, 'Root');
+}
+
 // Whether the current actor may edit / reset / delete the target account.
 function canManage(target) {
   if (target.permission === 'Root') return false;          // sitting Root → Transfer Crown only
-  if (hasPermission(session, 'Root')) return true;          // Root manages Read/Write/Admin
-  return target.permission === 'Read' || target.permission === 'Write'; // Admin manages Read/Write
+  if (isRoot()) return true;                                // Root manages Read/Write/Admin
+  // Home-group admins manage everyone (apart from sitting Root, blocked above).
+  if (isHomeAdmin()) return target.permission !== 'Admin' || isRoot();
+  // Other admins manage only their own group's Read/Write members.
+  if (target.group?.id !== session.group_id) return false;
+  return target.permission === 'Read' || target.permission === 'Write';
 }
 
 function assignablePermissions() {
-  return hasPermission(session, 'Root') ? ['Read', 'Write', 'Admin'] : ['Read', 'Write'];
+  if (isRoot() || isHomeAdmin()) return ['Read', 'Write', 'Admin'];
+  return ['Read', 'Write'];
+}
+
+function assignableGroupsForCreate() {
+  // Home admins and Root pick from non-archived groups; other admins create in
+  // their own group only.
+  if (isRoot() || isHomeAdmin()) {
+    return groups.filter((g) => !g.is_archived);
+  }
+  const own = groups.find((g) => g.id === session.group_id);
+  return own ? [own] : [];
 }
 
 /* — Temp-password banner ——————————————————————————————————— */
@@ -61,7 +87,14 @@ function showTempPassword(username, password) {
   host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-/* — Table rendering ———————————————————————————————————————— */
+/* — User table ——————————————————————————————————————————————— */
+
+function matchesSearch(u, term) {
+  if (!term) return true;
+  const haystack = `${u.username} ${u.permission} ${u.society_role} ${u.group?.name || ''}`.toLowerCase();
+  return haystack.includes(term);
+}
+
 function staticRow(u) {
   const tr = el('tr', { dataset: { id: u.id } });
 
@@ -73,6 +106,9 @@ function staticRow(u) {
     el('span', { class: 'tag-perm', dataset: { perm: u.permission }, text: u.permission }),
   ]));
   tr.appendChild(el('td', {}, [el('span', { class: 'tag-role', text: u.society_role })]));
+  tr.appendChild(el('td', {}, [
+    u.group ? groupTag(u.group) : el('span', { class: 'faint text-sm', text: '—' }),
+  ]));
   tr.appendChild(el('td', {}, [
     el('span', {
       class: u.is_active ? 'status-active' : 'status-inactive',
@@ -118,6 +154,24 @@ function renderEditRow(tr, u) {
   roleSel.value = u.society_role;
   tr.appendChild(el('td', {}, [roleSel]));
 
+  // Group cell. Root can edit; everyone else sees a read-only pill.
+  let groupSel = null;
+  const groupCell = el('td', {});
+  if (isRoot()) {
+    groupSel = el('select', { class: 'select' });
+    groups
+      .filter((g) => !g.is_archived || g.id === u.group?.id)
+      .forEach((g) =>
+        groupSel.appendChild(el('option', { value: g.id, text: g.name })));
+    groupSel.value = u.group?.id || '';
+  } else if (u.group) {
+    groupCell.appendChild(groupTag(u.group));
+  } else {
+    groupCell.appendChild(el('span', { class: 'faint text-sm', text: '—' }));
+  }
+  if (groupSel) groupCell.appendChild(groupSel);
+  tr.appendChild(groupCell);
+
   const activeSel = el('select', { class: 'select' });
   activeSel.appendChild(el('option', { value: 'true', text: 'Active' }));
   activeSel.appendChild(el('option', { value: 'false', text: 'Inactive' }));
@@ -135,6 +189,9 @@ function renderEditRow(tr, u) {
     if (roleSel.value !== u.society_role) body.society_role = roleSel.value;
     const active = activeSel.value === 'true';
     if (active !== u.is_active) body.is_active = active;
+    if (groupSel && groupSel.value && groupSel.value !== u.group?.id) {
+      body.group_id = groupSel.value;
+    }
     if (Object.keys(body).length === 0) { load(); return; }
     save.disabled = true;
     try {
@@ -176,7 +233,24 @@ async function removeUser(u) {
 function renderTable() {
   const tbody = $('#user-rows');
   clear(tbody);
-  users.forEach((u) => tbody.appendChild(staticRow(u)));
+  const filtered = users.filter((u) => matchesSearch(u, userSearchTerm));
+  if (filtered.length === 0) {
+    tbody.appendChild(el('tr', {}, [
+      el('td', { colspan: '7', class: 'muted', text: userSearchTerm ? 'No members match that search.' : 'No members yet.' }),
+    ]));
+    return;
+  }
+  filtered.forEach((u) => tbody.appendChild(staticRow(u)));
+}
+
+/* — Member search box ————————————————————————————————————— */
+function setupMemberSearch() {
+  const input = $('#member-search');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    userSearchTerm = input.value.trim().toLowerCase();
+    renderTable();
+  });
 }
 
 /* — Create user ———————————————————————————————————————————— */
@@ -192,6 +266,15 @@ function setupCreateForm() {
   SOCIETY_ROLES.forEach((r) => roleSel.appendChild(el('option', { value: r, text: r })));
   roleSel.value = 'Member';
 
+  // Group dropdown. Group admins see only their own group (locked, single
+  // option). Home admins and Root pick from any non-archived group.
+  const groupSel = form.group_id;
+  clear(groupSel);
+  const opts = assignableGroupsForCreate();
+  opts.forEach((g) => groupSel.appendChild(el('option', { value: g.id, text: g.name })));
+  groupSel.disabled = opts.length <= 1;
+  if (session.group_id) groupSel.value = session.group_id;
+
   $('#create-btn').addEventListener('click', async () => {
     showFieldErrors(form, null);
     const username = form.username.value.trim();
@@ -205,6 +288,7 @@ function setupCreateForm() {
           username,
           permission: permSel.value,
           society_role: roleSel.value,
+          group_id: groupSel.value,
         }),
       });
       showTempPassword(res.user.username, res.temp_password);
@@ -212,7 +296,11 @@ function setupCreateForm() {
       load();
     } catch (err) {
       if (err.fields) showFieldErrors(form, err.fields);
-      else toast(errorMessage(err, 'Could not create the account.'), 'error');
+      else if (err.code === 'GROUP_QUOTA_REACHED') {
+        toast('That group is at its member quota.', 'error');
+      } else {
+        toast(errorMessage(err, 'Could not create the account.'), 'error');
+      }
     } finally {
       btn.disabled = false; btn.textContent = 'Create account';
     }
@@ -224,6 +312,211 @@ function setupBackupPanel() {
   const panel = $('#backup-panel');
   if (!panel) return;
   if (hasPermission(session, 'Root')) panel.classList.remove('hidden');
+}
+
+/* — Manage groups (Root only) ————————————————————————————— */
+function groupRow(g) {
+  const tr = el('tr', { dataset: { id: g.id } });
+
+  // Name + colour pill
+  tr.appendChild(el('td', {}, [groupTag(g)]));
+
+  // Member count (computed from loaded users)
+  const count = users.filter((u) => u.group?.id === g.id && u.is_active).length;
+  tr.appendChild(el('td', { text: String(count) }));
+
+  // Quota
+  tr.appendChild(el('td', { text: g.member_quota == null ? 'Unlimited' : String(g.member_quota) }));
+
+  // Status
+  let status;
+  if (g.is_home) status = 'Home group';
+  else if (g.is_archived) status = 'Archived';
+  else status = 'Active';
+  tr.appendChild(el('td', { class: g.is_home ? 'status-active' : (g.is_archived ? 'muted' : '') }, [
+    document.createTextNode(status),
+  ]));
+
+  // Actions
+  const actions = el('div', { class: 'row-actions' });
+  if (g.is_home) {
+    actions.appendChild(el('button', { class: 'linkbtn text-sm', type: 'button', text: 'Edit' })).addEventListener('click', () => editGroup(g));
+  } else {
+    const edit = el('button', { class: 'linkbtn text-sm', type: 'button', text: 'Edit' });
+    edit.addEventListener('click', () => editGroup(g));
+    actions.appendChild(edit);
+
+    if (g.is_archived) {
+      const restore = el('button', { class: 'linkbtn text-sm', type: 'button', text: 'Unarchive' });
+      restore.addEventListener('click', () => toggleArchive(g, false));
+      actions.appendChild(restore);
+    } else {
+      const arch = el('button', { class: 'linkbtn text-sm', type: 'button', text: 'Archive' });
+      arch.addEventListener('click', () => toggleArchive(g, true));
+      actions.appendChild(arch);
+    }
+
+    const del = el('button', { class: 'linkbtn linkbtn--danger text-sm', type: 'button', text: 'Delete' });
+    del.addEventListener('click', () => deleteGroup(g));
+    actions.appendChild(del);
+  }
+  tr.appendChild(el('td', {}, [actions]));
+  return tr;
+}
+
+function renderGroupTable() {
+  const tbody = $('#group-rows');
+  if (!tbody) return;
+  clear(tbody);
+  if (groups.length === 0) {
+    tbody.appendChild(el('tr', {}, [el('td', { colspan: '5', class: 'muted', text: 'No groups yet.' })]));
+    return;
+  }
+  groups.forEach((g) => tbody.appendChild(groupRow(g)));
+}
+
+function renderGroupEditRow(tr, g) {
+  clear(tr);
+
+  // Name + colour picker, stacked in the Group column.
+  const nameInput = el('input', {
+    class: 'input', type: 'text', value: g.name, maxlength: '100',
+  });
+  const colourInput = el('input', {
+    class: 'colour-picker', type: 'color', value: g.colour,
+    title: 'Pick the group pill colour',
+  });
+  const groupCell = el('td', {}, [
+    el('div', { class: 'group-edit-row' }, [nameInput, colourInput]),
+  ]);
+  tr.appendChild(groupCell);
+
+  // Members (read-only).
+  const count = users.filter((u) => u.group?.id === g.id && u.is_active).length;
+  tr.appendChild(el('td', { text: String(count) }));
+
+  // Quota input. Disabled for the home group (always unlimited).
+  const quotaInput = el('input', {
+    class: 'input', type: 'number', min: '1',
+    value: g.member_quota == null ? '' : String(g.member_quota),
+    placeholder: 'Unlimited',
+  });
+  if (g.is_home) quotaInput.disabled = true;
+  tr.appendChild(el('td', {}, [quotaInput]));
+
+  // Status (read-only here; archive flips via the separate button on the static row).
+  const status = g.is_home ? 'Home group' : g.is_archived ? 'Archived' : 'Active';
+  tr.appendChild(el('td', { text: status }));
+
+  // Save / Cancel.
+  const save = el('button', { class: 'btn btn--sm', type: 'button', text: 'Save' });
+  const cancel = el('button', { class: 'linkbtn text-sm', type: 'button', text: 'Cancel' });
+  cancel.addEventListener('click', renderGroupTable);
+
+  save.addEventListener('click', async () => {
+    const body = {};
+    const newName = nameInput.value.trim();
+    const newColour = colourInput.value.toUpperCase();
+    if (newName && newName !== g.name) body.name = newName;
+    if (newColour && newColour !== g.colour.toUpperCase()) body.colour = newColour;
+    if (!g.is_home) {
+      const q = quotaInput.value.trim();
+      const newQuota = q === '' ? null : parseInt(q, 10);
+      if (newQuota !== (g.member_quota == null ? null : g.member_quota)) {
+        body.member_quota = newQuota;
+      }
+    }
+    if (Object.keys(body).length === 0) { renderGroupTable(); return; }
+    save.disabled = true;
+    try {
+      await apiFetch(`/groups/${encodeURIComponent(g.id)}`, {
+        method: 'PATCH', body: JSON.stringify(body),
+      });
+      toast('Group updated.', 'ok');
+      await loadGroups();
+      renderGroupTable();
+    } catch (err) {
+      toast(errorMessage(err, 'Could not update the group.'), 'error');
+      save.disabled = false;
+    }
+  });
+  tr.appendChild(el('td', {}, [el('div', { class: 'row-actions' }, [save, cancel])]));
+}
+
+function editGroup(g) {
+  const row = $(`#group-rows tr[data-id="${g.id}"]`);
+  if (row) renderGroupEditRow(row, g);
+}
+
+async function toggleArchive(g, archive) {
+  const verb = archive ? 'Archive' : 'Unarchive';
+  if (!window.confirm(`${verb} ${g.name}?`)) return;
+  try {
+    await apiFetch(`/groups/${encodeURIComponent(g.id)}`, {
+      method: 'PATCH', body: JSON.stringify({ is_archived: archive }),
+    });
+    toast(`${verb}d.`, 'ok');
+    await loadGroups();
+    renderGroupTable();
+  } catch (err) {
+    toast(errorMessage(err, `Could not ${verb.toLowerCase()} the group.`), 'error');
+  }
+}
+
+async function deleteGroup(g) {
+  if (!window.confirm(`Delete ${g.name}? All members must be moved or removed first.`)) return;
+  try {
+    await apiFetch(`/groups/${encodeURIComponent(g.id)}`, { method: 'DELETE' });
+    toast('Group deleted.', 'ok');
+    await loadGroups();
+    renderGroupTable();
+  } catch (err) {
+    if (err.code === 'GROUP_NOT_EMPTY') {
+      toast('Cannot delete: group still has members.', 'error');
+    } else {
+      toast(errorMessage(err, 'Could not delete the group.'), 'error');
+    }
+  }
+}
+
+function setupGroupsPanel() {
+  const panel = $('#groups-panel');
+  if (!panel) return;
+  if (!isRoot()) return;
+  panel.classList.remove('hidden');
+
+  $('#g-create-btn').addEventListener('click', async () => {
+    const form = $('#group-create-form');
+    showFieldErrors(form, null);
+    const name = form.name.value.trim();
+    const colour = form.colour.value.trim();
+    const quota = form.member_quota.value.trim();
+    const btn = $('#g-create-btn');
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      await apiFetch('/groups', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          colour: colour || undefined,
+          member_quota: quota || undefined,
+        }),
+      });
+      toast('Group created.', 'ok');
+      form.reset();
+      await loadGroups();
+      renderGroupTable();
+      // Refresh the create-user form's group dropdown.
+      setupCreateForm._refreshGroups?.();
+    } catch (err) {
+      if (err.fields) showFieldErrors(form, err.fields);
+      else toast(errorMessage(err, 'Could not create the group.'), 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create group';
+    }
+  });
+
+  renderGroupTable();
 }
 
 /* — Transfer Crown (Root only) ————————————————————————————— */
@@ -240,7 +533,7 @@ function setupTransferCrown() {
     clear(select);
     select.appendChild(el('option', { value: '', text: '— Select successor —' }));
     users
-      .filter((u) => u.id !== session.id && u.is_active)
+      .filter((u) => u.id !== session.id && u.is_active && u.group?.is_home)
       .forEach((u) => select.appendChild(el('option', {
         value: u.id, text: `${u.username} (${u.permission})`,
       })));
@@ -266,10 +559,11 @@ function setupTransferCrown() {
       setTimeout(() => { window.location.href = '/login.html'; }, 1200);
     } catch (err) {
       const map = {
-        INVALID_TARGET: 'That account cannot receive Root (must be an active member).',
+        INVALID_TARGET: 'That account cannot receive Root (must be an active home-group member).',
         SAME_ACCOUNT: 'You cannot transfer Root to yourself.',
         INVALID_CURRENT_ROOT: 'Your Root status could not be verified. Refresh and try again.',
         ROOT_SINGLETON_VIOLATION: 'The transfer failed a consistency check. No change was made.',
+        TARGET_NOT_IN_HOME_GROUP: 'Move the target into the home group before transferring Root.',
       };
       toast(map[err.code] || errorMessage(err, 'Transfer failed.'), 'error');
       btn.disabled = false; btn.textContent = 'Transfer Root';
@@ -278,17 +572,27 @@ function setupTransferCrown() {
 }
 
 /* — Load + init ———————————————————————————————————————————— */
+async function loadGroups() {
+  try {
+    groups = (await apiFetch('/groups', { noRedirect: true })) || [];
+  } catch (_e) {
+    groups = [];
+  }
+}
+
 async function load() {
   try {
     users = (await apiFetch('/users')) || [];
+    await loadGroups();
     renderTable();
+    if ($('#group-rows')) renderGroupTable();
     const crown = $('#crown-panel');
     if (crown && crown._refresh) crown._refresh();
   } catch (err) {
     const tbody = $('#user-rows');
     clear(tbody);
     tbody.appendChild(el('tr', {}, [
-      el('td', { colspan: '6', class: 'muted', text: errorMessage(err, 'Could not load members.') }),
+      el('td', { colspan: '7', class: 'muted', text: errorMessage(err, 'Could not load members.') }),
     ]));
   }
 }
@@ -298,13 +602,23 @@ async function init() {
   if (!session || session.force_reset) return;
 
   // Reflect the actor's reach in the page subtitle.
-  const scope = hasPermission(session, 'Root')
-    ? 'As Root you can manage every account and transfer the Root role.'
-    : 'As an Admin you can manage Read and Write members.';
+  let scope;
+  if (isRoot()) {
+    scope = 'As Root you can manage every account, every group, and transfer the Root role.';
+  } else if (isHomeAdmin()) {
+    scope = 'As a home-group Admin you can manage every account across every group.';
+  } else {
+    scope = `As a group Admin you can manage members of ${session.group_name || 'your group'}.`;
+  }
   $('#admin-scope').textContent = scope;
 
+  // Load groups first so the create form's dropdown is populated.
+  await loadGroups();
+
+  setupMemberSearch();
   setupCreateForm();
   setupBackupPanel();
+  setupGroupsPanel();
   setupTransferCrown();
   await load();
 }

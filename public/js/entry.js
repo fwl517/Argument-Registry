@@ -12,7 +12,7 @@
 import { apiFetch, errorMessage } from './api.js';
 import {
   $, el, clear, esc, formatDate, queryParam,
-  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, toast,
+  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, groupTag, toast,
 } from './utils.js';
 import { bootstrap, hasPermission } from './auth.js';
 import { mountRelationEditor, removeRelation } from './relations.js';
@@ -325,6 +325,7 @@ function renderEntry(entry) {
     metaRow('Party', entry.source ? sourceTag(entry.source) : null),
     metaRow('Published', entry.date_published ? formatDate(entry.date_published) : null),
     metaRow('Contributed by', formatUploader(entry.uploader)),
+    metaRow('Affiliation', entry.uploader?.group ? groupTag(entry.uploader.group) : null),
     metaRow('Visibility', entry.is_private ? 'Members only' : 'Public'),
   ].forEach((r) => { if (r) meta.appendChild(r); });
 

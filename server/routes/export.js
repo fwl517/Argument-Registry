@@ -75,11 +75,14 @@ async function collectPortableData(includePrivate) {
             s.name        AS src_name,
             u.username    AS uploader_username,
             u.society_role AS uploader_role,
+            ug.name       AS uploader_group_name,
             e.foreign_uploader_name,
-            e.foreign_uploader_role
+            e.foreign_uploader_role,
+            e.foreign_uploader_group
        FROM entries e
        LEFT JOIN sources s ON e.source_id = s.id
        LEFT JOIN users   u ON e.uploader_id = u.id
+       LEFT JOIN groups  ug ON ug.id = u.group_id
        ${visibilityClause}
        ORDER BY e.created_at`
   );
@@ -156,6 +159,10 @@ function shapePortableEntry(row, keywords) {
       };
     }
   }
+  // Group rides separately from uploader so it survives anonymisation —
+  // anonymous entries still display their group on the receiving instance.
+  const uploaderGroup = row.uploader_group_name || row.foreign_uploader_group || null;
+
   return {
     id: row.id,
     title: row.title,
@@ -169,7 +176,8 @@ function shapePortableEntry(row, keywords) {
     is_private: row.is_private,
     link: row.link,
     local_path: row.local_path,
-    uploader, // null when anonymised
+    uploader,            // null when anonymised
+    uploader_group: uploaderGroup, // string name, present even on anonymous rows
     keywords,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -177,9 +185,14 @@ function shapePortableEntry(row, keywords) {
 }
 
 async function collectBackupData() {
-  const [users, sources, keywords, entries, ek, ar] = await Promise.all([
+  const [groups, users, sources, keywords, entries, ek, ar] = await Promise.all([
     db.query(
-      `SELECT id, username, password_hash, permission, society_role,
+      `SELECT id, name, colour, text_colour, is_home, is_archived,
+              member_quota, created_at
+         FROM groups ORDER BY created_at`
+    ),
+    db.query(
+      `SELECT id, username, password_hash, permission, society_role, group_id,
               is_active, force_reset, created_at, created_by
          FROM users ORDER BY created_at`
     ),
@@ -192,7 +205,8 @@ async function collectBackupData() {
       `SELECT id, title, topic, stance, argument_type, source_type, source_id,
               date_published, gist, is_private, link, local_path,
               uploader_id, foreign_uploader_name, foreign_uploader_role,
-              anonymise_uploader, created_at, updated_at
+              foreign_uploader_group, anonymise_uploader,
+              created_at, updated_at
          FROM entries ORDER BY created_at`
     ),
     db.query('SELECT entry_id, keyword_id FROM entry_keywords'),
@@ -204,6 +218,7 @@ async function collectBackupData() {
   ]);
 
   return {
+    groups: groups.rows,
     users: users.rows,
     sources: sources.rows,
     keywords: keywords.rows,
@@ -247,6 +262,7 @@ async function streamZip(res, scope, data) {
     relations: (data.relations || data.argument_relations || []).length,
   };
   if (scope === 'backup') {
+    counts.groups = (data.groups || []).length;
     counts.users = (data.users || []).length;
     counts.entry_keywords = (data.entry_keywords || []).length;
   }
@@ -268,6 +284,7 @@ async function streamZip(res, scope, data) {
   const payload =
     scope === 'backup'
       ? {
+          groups: data.groups,
           users: data.users,
           sources: data.sources,
           keywords: data.keywords,

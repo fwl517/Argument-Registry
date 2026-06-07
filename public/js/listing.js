@@ -34,6 +34,22 @@ async function populateSourceFilter() {
   }
 }
 
+async function populateGroupFilter() {
+  const select = $('#filter-group');
+  if (!select) return;
+  try {
+    const groups = await apiFetch('/groups', { noRedirect: true });
+    (groups || []).forEach((g) => {
+      const label = g.is_archived ? `${g.name} (archived)` : g.name;
+      select.appendChild(el('option', { value: g.id, text: label }));
+    });
+    const urlVal = new URLSearchParams(location.search).get('group_id');
+    if (urlVal) select.value = urlVal;
+  } catch (_e) {
+    /* a failed group list just leaves the filter empty */
+  }
+}
+
 async function init() {
   const requireAuth = document.body.dataset.requireAuth === 'true';
   const session = await bootstrap(requireAuth ? { require: 'auth' } : {});
@@ -43,7 +59,7 @@ async function init() {
   const listEl = $('#entry-results');
   const countEl = $('#result-count');
 
-  await populateSourceFilter();
+  await Promise.all([populateSourceFilter(), populateGroupFilter()]);
 
   let controller;
   const onResults = (data) => {
@@ -61,6 +77,8 @@ async function init() {
       controller.reset();
       const src = $('#filter-source');
       if (src) src.value = '';
+      const grp = $('#filter-group');
+      if (grp) grp.value = '';
     });
   }
 }

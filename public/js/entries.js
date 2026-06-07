@@ -12,7 +12,7 @@
 
 import {
   el, clear, esc, formatShortDate,
-  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge,
+  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, groupTag,
 } from './utils.js';
 
 function formatUploader(uploader) {
@@ -67,9 +67,11 @@ function entryCard(entry) {
     card.appendChild(kw);
   }
 
-  // Footer meta: uploader + dates + attachment hint.
+  // Footer meta: uploader + group pill + dates + attachment hint.
   const meta = el('div', { class: 'entry-card__meta' });
   meta.appendChild(el('span', { class: 'entry-card__uploader', text: formatUploader(entry.uploader) }));
+  const group = groupTag(entry.uploader?.group);
+  if (group) meta.appendChild(group);
   meta.appendChild(el('span', { class: 'meta-dot', text: '•' }));
   meta.appendChild(el('span', { text: formatShortDate(entry.created_at) }));
   if (entry.local_path) {

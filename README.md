@@ -187,6 +187,10 @@ All endpoints are under `/api`. Errors use the shape
 | `DELETE /relations/:id`               | Admin+        | Remove a link.                           |
 | `GET  /sources`                       | public        | Party/source list (presets first).       |
 | `POST /sources`                       | Write+        | Add a non-preset source.                 |
+| `GET  /groups`                        | public        | List groups (home/Independent/partners).  |
+| `POST /groups`                        | Root          | Create a partner group.                   |
+| `PATCH /groups/:id`                   | Root          | Rename, recolour, set quota, or archive.  |
+| `DELETE /groups/:id`                  | Root          | Delete an empty group.                    |
 | `GET  /keywords` · `POST /keywords`   | public / Write+ | List / upsert tags.                    |
 | `GET  /users` · `POST /users`         | Admin+        | List / create members.                   |
 | `PATCH /users/:id` · `DELETE /users/:id` | Admin+     | Edit / remove members.                   |
@@ -205,14 +209,32 @@ Permission ladder: **Read → Write → Admin → Root**.
 
 - **Read** — browse members-only entries.
 - **Write** — also create entries/sources/keywords/relations and edit *their own* entries.
-- **Admin** — also manage Read/Write members, edit/delete any entry, and remove relations.
-- **Root** — the single superuser. Can manage Admins and transfer the Root role.
+- **Admin** — also manage Read/Write members of their **own group**, edit/delete entries from their group's members, and remove relations created by them.
+- **Root** — the single superuser. Can manage every group's Admins, create/edit/archive/delete groups, and transfer the Root role.
   There is always exactly one Root; the role moves via **Transfer Crown**, never by
-  direct promotion. Admins may only assign Read/Write; only Root may grant Admin.
+  direct promotion. Group Admins may only assign Read/Write — only **home-group** Admins (and Root) may grant Admin.
 
 A separate **society role** (President, General Secretary, Treasurer,
 Extended-Committee, Member, Alumni) is descriptive metadata and is independent of
 the permission level.
+
+### Groups (multi-society collaboration)
+
+Every user belongs to one **group** representing their society or affiliation.
+Two groups are seeded at install time:
+
+- **Home Society** — the founding instance. Its Admins have platform-wide reach;
+  only Root can rename or archive it (the home group cannot be archived).
+- **Independent** — a catch-all for unaffiliated members; unlimited quota by
+  default and typically has no group Admins of its own (home-group Admins
+  manage it).
+
+Root can create additional groups for partner societies, give each one a member
+quota (or leave it unlimited), and assign a colour for the displayed group pill.
+Each partner group has its own Admins who manage only their group's members and
+entries. Home-group Admins can act across every group; partner Admins are
+strictly scoped to their own. Users cannot move themselves between groups — only
+Root can change a user's `group_id`.
 
 ---
 

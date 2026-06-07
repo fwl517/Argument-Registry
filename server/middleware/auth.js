@@ -26,9 +26,11 @@ async function loadSession(sessionId, kind) {
     result = await db.query(
       `SELECT s.id AS session_id, s.kind, s.expires_at,
               u.id, u.username, u.permission, u.society_role,
-              u.is_active, u.force_reset
+              u.is_active, u.force_reset,
+              u.group_id, g.name AS group_name, g.is_home AS group_is_home
          FROM sessions s
-         JOIN users u ON s.user_id = u.id
+         JOIN users  u ON s.user_id  = u.id
+         JOIN groups g ON g.id       = u.group_id
         WHERE s.id = $1 AND s.expires_at > NOW()`,
       [sessionId]
     );
@@ -59,6 +61,9 @@ async function attachSession(req, _res, next) {
         permission: row.permission,
         society_role: row.society_role,
         force_reset: row.force_reset,
+        group_id: row.group_id,
+        group_name: row.group_name,
+        is_home_group: row.group_is_home,
       };
     }
     next();
@@ -84,6 +89,9 @@ async function attachResetSession(req, _res, next) {
         permission: row.permission,
         society_role: row.society_role,
         force_reset: row.force_reset,
+        group_id: row.group_id,
+        group_name: row.group_name,
+        is_home_group: row.group_is_home,
       };
     }
     next();
@@ -142,6 +150,23 @@ function atLeast(a, b) {
   return LEVELS[a] >= LEVELS[b];
 }
 
+/**
+ * True when `actor` has admin reach over `target`. The rule:
+ *   home-group admins reach everyone; other admins reach only members of
+ *   their own group. Permission level is *not* checked here — the caller
+ *   should pair this with `requirePermission('Admin')` (or stronger).
+ *
+ * `target` may be either a user row (with `group_id`) or just a group id
+ * string.
+ */
+function sameScope(actor, target) {
+  if (!actor) return false;
+  if (actor.is_home_group) return true;
+  const targetGroupId = typeof target === 'string' ? target : target?.group_id;
+  if (!targetGroupId) return false;
+  return actor.group_id === targetGroupId;
+}
+
 module.exports = {
   LEVELS,
   attachSession,
@@ -150,4 +175,5 @@ module.exports = {
   requirePermission,
   allowAuthOrReset,
   atLeast,
+  sameScope,
 };

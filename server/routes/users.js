@@ -10,8 +10,9 @@
 const express = require('express');
 const db = require('../db');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
-const { requirePermission, atLeast } = require('../middleware/auth');
+const { requirePermission, atLeast, sameScope } = require('../middleware/auth');
 const { hashPassword, generateTempPassword } = require('../utils/password');
+const { serialiseUser } = require('../utils/serialise');
 
 const router = express.Router();
 
@@ -25,43 +26,54 @@ const SOCIETY_ROLES = [
   'Alumni',
 ];
 
-function serialiseUser(row) {
-  return {
-    id: row.id,
-    username: row.username,
-    permission: row.permission,
-    society_role: row.society_role,
-    is_active: row.is_active,
-    force_reset: row.force_reset,
-    created_at: row.created_at,
-  };
-}
+// Shared SELECT clause: join the user's group so the serialiser can render
+// the group pill in one round-trip.
+const USER_SELECT = `
+  SELECT u.id, u.username, u.permission, u.society_role, u.is_active,
+         u.force_reset, u.created_at,
+         u.group_id,
+         g.name        AS group_name,
+         g.colour      AS group_colour,
+         g.text_colour AS group_text_colour,
+         g.is_home     AS group_is_home
+    FROM users u
+    JOIN groups g ON g.id = u.group_id
+`;
 
 async function getUserById(id) {
   let result;
   try {
-    result = await db.query(
-      `SELECT id, username, permission, society_role, is_active, force_reset, created_at
-         FROM users WHERE id = $1`,
-      [id]
-    );
+    result = await db.query(`${USER_SELECT} WHERE u.id = $1`, [id]);
   } catch {
     return null; // malformed uuid
   }
   return result.rows[0] || null;
 }
 
+/** Can the actor grant the Admin permission level? Root and home-group Admins only. */
+function canGrantAdmin(actor) {
+  return atLeast(actor.permission, 'Root') || actor.is_home_group;
+}
+
 // Every route below requires Admin or higher.
 router.use(requirePermission('Admin'));
 
 // ── GET /api/users ──────────────────────────────────────────────────────────
+// Group admins see only their own group's members. Home-group admins see
+// everyone. The frontend layer adds a client-side search box on top of this.
 router.get(
   '/',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const actor = req.user;
+    const params = [];
+    let where = '';
+    if (!actor.is_home_group) {
+      where = 'WHERE u.group_id = $1';
+      params.push(actor.group_id);
+    }
     const { rows } = await db.query(
-      `SELECT id, username, permission, society_role, is_active, force_reset, created_at
-         FROM users
-        ORDER BY created_at ASC`
+      `${USER_SELECT} ${where} ORDER BY u.created_at ASC`,
+      params
     );
     res.json(rows.map(serialiseUser));
   })
@@ -72,7 +84,12 @@ router.post(
   '/',
   asyncHandler(async (req, res) => {
     const actor = req.user;
-    const { username, permission, society_role: societyRole } = req.body || {};
+    const {
+      username,
+      permission,
+      society_role: societyRole,
+      group_id: groupIdInput,
+    } = req.body || {};
 
     const fields = {};
     if (typeof username !== 'string' || username.trim() === '') {
@@ -85,27 +102,73 @@ router.post(
     if (!ASSIGNABLE.includes(permission)) {
       fields.permission = 'Must be one of Read, Write, Admin.';
     }
+
+    // Group admins create in their own group only; home-group admins must
+    // name a group explicitly.
+    let groupId;
+    if (actor.is_home_group) {
+      if (typeof groupIdInput !== 'string' || groupIdInput.trim() === '') {
+        fields.group_id = 'Required.';
+      } else {
+        groupId = groupIdInput.trim();
+      }
+    } else {
+      // Force the actor's own group regardless of any value sent. Prevents a
+      // group admin from creating accounts in another group.
+      groupId = actor.group_id;
+      if (groupIdInput && groupIdInput !== actor.group_id) {
+        fields.group_id = 'You can only create accounts within your own group.';
+      }
+    }
+
     if (Object.keys(fields).length > 0) {
       return res.status(422).json({ error: 'VALIDATION', fields });
     }
 
-    // Admins may only create Read/Write accounts. Root may also create Admin.
-    if (permission === 'Admin' && !atLeast(actor.permission, 'Root')) {
+    // Group admins cannot mint Admins; only Root and home-group admins can.
+    if (permission === 'Admin' && !canGrantAdmin(actor)) {
       throw new HttpError(403, 'PERMISSION_DENIED');
+    }
+
+    // Validate the target group: must exist, must not be archived, must not
+    // be at quota.
+    const groupRow = await db.query(
+      'SELECT id, is_archived, member_quota FROM groups WHERE id = $1',
+      [groupId]
+    ).then((r) => r.rows[0]).catch(() => null);
+    if (!groupRow) {
+      return res
+        .status(422)
+        .json({ error: 'VALIDATION', fields: { group_id: 'Unknown group.' } });
+    }
+    if (groupRow.is_archived) {
+      return res
+        .status(422)
+        .json({ error: 'VALIDATION', fields: { group_id: 'Group is archived.' } });
+    }
+    if (groupRow.member_quota !== null) {
+      const { rows: countRows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM users WHERE group_id = $1 AND is_active = TRUE',
+        [groupId]
+      );
+      if (countRows[0].c >= groupRow.member_quota) {
+        return res.status(422).json({ error: 'GROUP_QUOTA_REACHED' });
+      }
     }
 
     const tempPassword = generateTempPassword();
     const passwordHash = await hashPassword(tempPassword);
 
-    let row;
+    let insertedId;
     try {
       const result = await db.query(
-        `INSERT INTO users (username, password_hash, permission, society_role, force_reset, created_by)
-         VALUES ($1, $2, $3, $4, TRUE, $5)
-         RETURNING id, username, permission, society_role, is_active, force_reset, created_at`,
-        [username.trim(), passwordHash, permission, role, actor.id]
+        `INSERT INTO users
+           (username, password_hash, permission, society_role, group_id, force_reset, created_by)
+         VALUES ($1, $2, $3, $4, $5, TRUE, $6)
+         RETURNING id`,
+        [username.trim(), passwordHash, permission, role, groupId, actor.id]
       );
-      row = result.rows[0];
+      insertedId = result.rows[0].id;
     } catch (err) {
       if (err.code === '23505') {
         return res
@@ -115,7 +178,8 @@ router.post(
       throw err;
     }
 
-    res.status(201).json({ user: serialiseUser(row), temp_password: tempPassword });
+    const created = await getUserById(insertedId);
+    res.status(201).json({ user: serialiseUser(created), temp_password: tempPassword });
   })
 );
 
@@ -129,12 +193,29 @@ router.patch(
 
     const actorIsRoot = atLeast(actor.permission, 'Root');
 
+    // Scope: non-home admins can only act on members of their own group.
+    if (!sameScope(actor, target)) {
+      throw new HttpError(403, 'PERMISSION_DENIED');
+    }
+
     // Admins cannot touch Root or Admin accounts at all.
     if (!actorIsRoot && (target.permission === 'Root' || target.permission === 'Admin')) {
       throw new HttpError(403, 'PERMISSION_DENIED');
     }
 
-    const { username, society_role: societyRole, permission, is_active: isActive } = req.body || {};
+    const {
+      username,
+      society_role: societyRole,
+      permission,
+      is_active: isActive,
+      group_id: groupIdChange,
+    } = req.body || {};
+
+    // Group changes are Root-only. Everyone else (including home-group admins)
+    // is locked out so groups stay stable affiliations.
+    if (groupIdChange !== undefined && !actorIsRoot) {
+      throw new HttpError(403, 'PERMISSION_DENIED');
+    }
 
     const fields = {};
     const sets = [];
@@ -167,7 +248,7 @@ router.patch(
       }
       if (!ASSIGNABLE.includes(permission)) {
         fields.permission = 'Must be one of Read, Write, Admin.';
-      } else if (!actorIsRoot && permission === 'Admin') {
+      } else if (permission === 'Admin' && !canGrantAdmin(actor)) {
         throw new HttpError(403, 'PERMISSION_DENIED');
       } else if (target.permission === 'Root') {
         // Demoting the sitting Root must go through Transfer Crown.
@@ -194,6 +275,26 @@ router.patch(
       }
     }
 
+    // Group change: Root only, validated against the groups table.
+    if (groupIdChange !== undefined) {
+      if (typeof groupIdChange !== 'string' || groupIdChange.trim() === '') {
+        fields.group_id = 'Must be a group id.';
+      } else {
+        const grow = await db.query(
+          'SELECT id, is_archived FROM groups WHERE id = $1',
+          [groupIdChange.trim()]
+        ).then((r) => r.rows[0]).catch(() => null);
+        if (!grow) {
+          fields.group_id = 'Unknown group.';
+        } else if (grow.is_archived) {
+          fields.group_id = 'Group is archived.';
+        } else {
+          sets.push(`group_id = $${i++}`);
+          params.push(grow.id);
+        }
+      }
+    }
+
     if (Object.keys(fields).length > 0) {
       return res.status(422).json({ error: 'VALIDATION', fields });
     }
@@ -202,15 +303,11 @@ router.patch(
     }
 
     params.push(target.id);
-    let row;
     try {
-      const result = await db.query(
-        `UPDATE users SET ${sets.join(', ')}
-          WHERE id = $${i}
-          RETURNING id, username, permission, society_role, is_active, force_reset, created_at`,
+      await db.query(
+        `UPDATE users SET ${sets.join(', ')} WHERE id = $${i}`,
         params
       );
-      row = result.rows[0];
     } catch (err) {
       if (err.code === '23505') {
         return res
@@ -225,7 +322,8 @@ router.patch(
       await db.query('DELETE FROM sessions WHERE user_id = $1', [target.id]);
     }
 
-    res.json({ user: serialiseUser(row) });
+    const updated = await getUserById(target.id);
+    res.json({ user: serialiseUser(updated) });
   })
 );
 
@@ -237,8 +335,10 @@ router.delete(
     const target = await getUserById(req.params.id);
     if (!target) throw new HttpError(404, 'NOT_FOUND');
 
+    if (!sameScope(actor, target)) {
+      throw new HttpError(403, 'PERMISSION_DENIED');
+    }
     if (target.permission === 'Root') {
-      // Blocked at the DB trigger too; refuse early with a clean message.
       throw new HttpError(403, 'PERMISSION_DENIED');
     }
     if (!atLeast(actor.permission, 'Root') && target.permission === 'Admin') {
@@ -270,6 +370,9 @@ router.post(
     const target = await getUserById(req.params.id);
     if (!target) throw new HttpError(404, 'NOT_FOUND');
 
+    if (!sameScope(actor, target)) {
+      throw new HttpError(403, 'PERMISSION_DENIED');
+    }
     if (target.permission === 'Root') {
       throw new HttpError(403, 'PERMISSION_DENIED');
     }
@@ -302,12 +405,24 @@ router.post(
         .json({ error: 'VALIDATION', fields: { target_user_id: 'Required.' } });
     }
 
+    // Root must live in the home group. Refuse the transfer if the target
+    // is in a partner group — Root would need to move them to home first.
+    const target = await getUserById(targetId.trim());
+    if (!target) {
+      throw new HttpError(422, 'INVALID_TARGET');
+    }
+    if (!target.group_is_home) {
+      return res.status(422).json({
+        error: 'TARGET_NOT_IN_HOME_GROUP',
+        message: 'Root can only sit in the home group. Move the target there first.',
+      });
+    }
+
     try {
       await db.withTransaction(async (client) => {
         await client.query('CALL transfer_crown($1, $2)', [currentRootId, targetId]);
       });
     } catch (err) {
-      // Procedure / trigger RAISE EXCEPTION arrives as a P0001 error.
       const msg = String(err.message || '');
       if (/INVALID_TARGET/.test(msg)) {
         throw new HttpError(422, 'INVALID_TARGET');
@@ -324,7 +439,6 @@ router.post(
       throw err;
     }
 
-    // The former root's existing sessions are invalidated.
     await db.query('DELETE FROM sessions WHERE user_id = $1', [currentRootId]);
     res.json({ ok: true });
   })

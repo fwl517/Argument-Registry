@@ -31,6 +31,9 @@ function publicUser(u, forceReset) {
     permission: u.permission,
     society_role: u.society_role,
     force_reset: forceReset,
+    group_id: u.group_id ?? null,
+    group_name: u.group_name ?? null,
+    is_home_group: u.is_home_group ?? u.group_is_home ?? false,
   };
 }
 
@@ -59,10 +62,12 @@ router.post(
     }
 
     const { rows } = await db.query(
-      `SELECT id, username, password_hash, permission, society_role,
-              is_active, force_reset
-         FROM users
-        WHERE username = $1`,
+      `SELECT u.id, u.username, u.password_hash, u.permission, u.society_role,
+              u.is_active, u.force_reset,
+              u.group_id, g.name AS group_name, g.is_home AS group_is_home
+         FROM users u
+         JOIN groups g ON g.id = u.group_id
+        WHERE u.username = $1`,
       [username]
     );
     const user = rows[0];

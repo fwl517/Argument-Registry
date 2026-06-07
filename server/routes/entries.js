@@ -11,7 +11,7 @@ const express = require('express');
 const db = require('../db');
 const config = require('../config');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
-const { requirePermission, atLeast } = require('../middleware/auth');
+const { requirePermission, atLeast, sameScope } = require('../middleware/auth');
 const { upload, publicPathFor, removeUploaded } = require('../middleware/upload');
 const { serialiseEntry } = require('../utils/serialise');
 const { normaliseTag } = require('./keywords');
@@ -69,10 +69,15 @@ const ENTRY_SELECT = `
          s.text_colour AS source_text_colour,
          s.is_preset   AS source_is_preset,
          u.username    AS uploader_username,
-         u.society_role AS uploader_role
+         u.society_role AS uploader_role,
+         u.group_id    AS uploader_group_id,
+         ug.name        AS uploader_group_name,
+         ug.colour      AS uploader_group_colour,
+         ug.text_colour AS uploader_group_text_colour
     FROM entries e
     LEFT JOIN sources s ON e.source_id = s.id
     LEFT JOIN users   u ON e.uploader_id = u.id
+    LEFT JOIN groups  ug ON ug.id = u.group_id
 `;
 
 async function fetchEntryRow(executor, id) {
@@ -225,6 +230,15 @@ router.get(
         where.push(`e.source_id = $${i++}`);
         params.push(sid);
       }
+    }
+    if (typeof q.group_id === 'string' && q.group_id.trim() !== '') {
+      // Filters entries whose real uploader belongs to the given group.
+      // Foreign-imported entries (uploader_id NULL) are not matched here
+      // because the foreign group is a display string, not the same entity.
+      where.push(
+        `EXISTS (SELECT 1 FROM users uf WHERE uf.id = e.uploader_id AND uf.group_id = $${i++})`
+      );
+      params.push(q.group_id.trim());
     }
     if (typeof q.keyword === 'string' && q.keyword.trim() !== '') {
       where.push(
@@ -415,9 +429,21 @@ router.patch(
     const current = await fetchEntryRow(db, req.params.id);
     if (!current) throw new HttpError(404, 'NOT_FOUND');
 
-    // Write may edit only their own entries; Admin+ may edit any.
-    if (!atLeast(req.user.permission, 'Admin') && current.uploader_id !== req.user.id) {
-      throw new HttpError(403, 'PERMISSION_DENIED');
+    // Write may edit only their own entries; Admin+ may edit any in scope.
+    // Scope here = same group as the uploader, or actor is a home-group Admin.
+    // Foreign-imported entries (uploader_id NULL) are editable only by
+    // home-group admins.
+    if (current.uploader_id !== req.user.id) {
+      if (!atLeast(req.user.permission, 'Admin')) {
+        throw new HttpError(403, 'PERMISSION_DENIED');
+      }
+      if (current.uploader_id) {
+        if (!sameScope(req.user, { group_id: current.uploader_group_id })) {
+          throw new HttpError(403, 'PERMISSION_DENIED');
+        }
+      } else if (!req.user.is_home_group) {
+        throw new HttpError(403, 'PERMISSION_DENIED');
+      }
     }
 
     const b = req.body || {};
@@ -570,6 +596,17 @@ router.delete(
   asyncHandler(async (req, res) => {
     const current = await fetchEntryRow(db, req.params.id);
     if (!current) throw new HttpError(404, 'NOT_FOUND');
+
+    // Scope: admins can delete entries from uploaders in their own group, or
+    // any entry if they're a home-group admin. Foreign-imported entries
+    // (uploader_id NULL) are home-group-only.
+    if (current.uploader_id) {
+      if (!sameScope(req.user, { group_id: current.uploader_group_id })) {
+        throw new HttpError(403, 'PERMISSION_DENIED');
+      }
+    } else if (!req.user.is_home_group) {
+      throw new HttpError(403, 'PERMISSION_DENIED');
+    }
 
     // Cascades to entry_keywords and argument_relations via FK ON DELETE CASCADE.
     await db.query('DELETE FROM entries WHERE id = $1', [current.id]);

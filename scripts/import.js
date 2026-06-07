@@ -154,6 +154,10 @@ async function importPortable(data, files) {
         anonymise = true;
       }
 
+      // uploader_group survives anonymisation — anonymous entries on the
+      // source instance still carry their group label.
+      const foreignGroup = e.uploader_group || null;
+
       const sourceId = e.source_name ? sourceIdByName.get(e.source_name) || null : null;
 
       const { rows } = await client.query(
@@ -161,9 +165,10 @@ async function importPortable(data, files) {
            (title, topic, stance, argument_type, source_type, source_id,
             date_published, gist, is_private, link, local_path,
             uploader_id, foreign_uploader_name, foreign_uploader_role,
+            foreign_uploader_group,
             anonymise_uploader, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
-                 NULL, $12, $13, $14, $15, $16)
+                 NULL, $12, $13, $14, $15, $16, $17)
          RETURNING id`,
         [
           e.title,
@@ -179,6 +184,7 @@ async function importPortable(data, files) {
           localPath,
           foreignName,
           foreignRole,
+          foreignGroup,
           anonymise,
           e.created_at || new Date().toISOString(),
           e.updated_at || new Date().toISOString(),
@@ -262,23 +268,47 @@ async function importBackup(data, files) {
   }
 
   await db.withTransaction(async (client) => {
-    // Drop the schema-seeded preset sources so the backup's source IDs survive.
-    // TRUNCATE skips row-level triggers (the preset-deletion guard).
+    // Drop the schema-seeded preset rows so the backup's IDs survive.
+    // TRUNCATE skips row-level triggers (the preset-deletion / home-group
+    // guards) and CASCADE handles anything dangling (which the pre-check
+    // already confirmed is empty).
     await client.query('TRUNCATE TABLE sources CASCADE');
+    await client.query('TRUNCATE TABLE groups CASCADE');
+
+    // ── Groups (must precede users for the FK) ──────────────────────────────
+    for (const g of data.groups || []) {
+      await client.query(
+        `INSERT INTO groups
+           (id, name, colour, text_colour, is_home, is_archived,
+            member_quota, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          g.id,
+          g.name,
+          g.colour,
+          g.text_colour,
+          g.is_home,
+          g.is_archived,
+          g.member_quota,
+          g.created_at,
+        ]
+      );
+    }
 
     // ── Users (two-phase to satisfy the self-referential created_by FK) ─────
     for (const u of data.users || []) {
       await client.query(
         `INSERT INTO users
-           (id, username, password_hash, permission, society_role,
+           (id, username, password_hash, permission, society_role, group_id,
             is_active, force_reset, created_at, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL)`,
         [
           u.id,
           u.username,
           u.password_hash,
           u.permission,
           u.society_role,
+          u.group_id,
           u.is_active,
           u.force_reset,
           u.created_at,
@@ -344,8 +374,9 @@ async function importBackup(data, files) {
            (id, title, topic, stance, argument_type, source_type, source_id,
             date_published, gist, is_private, link, local_path,
             uploader_id, foreign_uploader_name, foreign_uploader_role,
-            anonymise_uploader, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+            foreign_uploader_group, anonymise_uploader,
+            created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
         [
           e.id,
           e.title,
@@ -362,6 +393,7 @@ async function importBackup(data, files) {
           e.uploader_id,
           e.foreign_uploader_name,
           e.foreign_uploader_role,
+          e.foreign_uploader_group,
           e.anonymise_uploader,
           e.created_at,
           e.updated_at,
@@ -398,6 +430,7 @@ async function importBackup(data, files) {
   });
 
   console.log('Backup restored.');
+  console.log(`  groups:     ${(data.groups || []).length}`);
   console.log(`  users:      ${(data.users || []).length}`);
   console.log(`  sources:    ${(data.sources || []).length}`);
   console.log(`  keywords:   ${(data.keywords || []).length}`);

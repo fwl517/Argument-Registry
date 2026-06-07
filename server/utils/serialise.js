@@ -60,18 +60,36 @@ function serialiseEntry(row, keywords = []) {
     updated_at: row.updated_at,
   };
 
+  // Group affiliation is shown on every entry — including anonymous ones —
+  // because the decision was that group context aids collaboration even when
+  // identity is hidden. For real uploaders we resolve via the joined group
+  // row; for foreign-imported entries we use the denormalised display string.
+  const uploaderGroup = row.uploader_group_name
+    ? {
+        name: row.uploader_group_name,
+        colour: row.uploader_group_colour,
+        text_colour: row.uploader_group_text_colour,
+      }
+    : row.foreign_uploader_group
+      ? { name: row.foreign_uploader_group, colour: null, text_colour: null }
+      : null;
+
   if (row.anonymise_uploader) {
-    entry.uploader = { name: 'Anonymous Member', role: null };
+    entry.uploader = { name: 'Anonymous Member', role: null, group: uploaderGroup };
   } else if (row.uploader_username) {
-    entry.uploader = { name: row.uploader_username, role: row.uploader_role };
+    entry.uploader = {
+      name: row.uploader_username,
+      role: row.uploader_role,
+      group: uploaderGroup,
+    };
   } else if (row.foreign_uploader_name) {
     entry.uploader = {
       name: row.foreign_uploader_name,
       role: row.foreign_uploader_role || null,
+      group: uploaderGroup,
     };
   } else {
-    // Uploader row missing (e.g. dangling reference) — fail safe.
-    entry.uploader = { name: 'Unknown', role: null };
+    entry.uploader = { name: 'Unknown', role: null, group: uploaderGroup };
   }
 
   // uploader_id, foreign_uploader_*, and anonymise_uploader are deliberately
@@ -80,4 +98,31 @@ function serialiseEntry(row, keywords = []) {
   return entry;
 }
 
-module.exports = { serialiseEntry, buildSource };
+/**
+ * Serialise a user row for /api/users responses. The user's group is included
+ * as a nested object so the frontend can render the group pill without a
+ * second roundtrip.
+ */
+function serialiseUser(row) {
+  const group = row.group_id
+    ? {
+        id: row.group_id,
+        name: row.group_name,
+        colour: row.group_colour,
+        text_colour: row.group_text_colour,
+        is_home: row.group_is_home,
+      }
+    : null;
+  return {
+    id: row.id,
+    username: row.username,
+    permission: row.permission,
+    society_role: row.society_role,
+    is_active: row.is_active,
+    force_reset: row.force_reset,
+    created_at: row.created_at,
+    group,
+  };
+}
+
+module.exports = { serialiseEntry, buildSource, serialiseUser };

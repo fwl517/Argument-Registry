@@ -5,23 +5,29 @@ provides; the exact wording of buttons may vary slightly.
 
 ### Understanding roles
 
-There are two *separate* kinds of role, and people mix them up:
+There are *three* separate things, and people mix them up:
 
 - **Permission level** — what you're *allowed to do*: **Read → Write → Admin →
   Root**, each one able to do everything the one before can, plus more.
   - **Read:** browse members-only entries.
   - **Write:** also create entries, sources, keywords and links, and edit *your
     own* entries.
-  - **Admin:** also manage Read/Write members, edit or delete *any* entry, and
-    remove links.
-  - **Root:** the single head administrator — manages Admins and can hand the
-    Root role to someone else.
+  - **Admin:** also manage Read/Write members **of your own group**, edit or
+    delete entries belonging to your group, and remove links.
+  - **Root:** the single head administrator — manages every group, every
+    account, and can hand the Root role to someone else.
 - **Society role** — a *label* describing your position (President, General
   Secretary, Treasurer, Extended-Committee, Member, Alumni). This is just
   descriptive and has nothing to do with what you can technically do.
+- **Group / affiliation** — which society you belong to. The home society (the
+  one that runs the system) and any partner societies that have been invited
+  on. Your group is shown as a coloured pill next to your name. Your group
+  determines what an Admin can reach: **partner-society Admins can only
+  manage their own group's members**, while **home-society Admins can reach
+  every account in every group**.
 
-So someone can be "Treasurer" (society role) with "Write" permissions, for
-instance.
+So someone can be "Treasurer" (society role) with "Write" permissions in the
+"Liberal Democrats Society" group — three independent attributes.
 
 ### Logging in and your first password
 
@@ -59,9 +65,12 @@ You need **Write** permission or higher. Go to the upload/new-entry page
 - **Keywords/tags** to make it findable.
 - Whether it's **public or private**, and whether it's **anonymous**.
 
-If you mark an entry **anonymous**, your identity is hidden from everyone — it
-shows as "Anonymous Member". This is enforced by the server, so your name truly
-doesn't reach other people's browsers, not even hidden in the page.
+If you mark an entry **anonymous**, your *identity* is hidden from everyone —
+it shows as "Anonymous Member". Your **group affiliation** is still shown
+("Anonymous Member · Liberal Democrats Society"), because the value of the
+shared database comes from knowing which society contributed which material.
+The identity-hiding is enforced by the server, so your name truly doesn't
+reach other people's browsers, not even hidden in the page.
 
 ### Adding a source that isn't in the list
 
@@ -134,13 +143,59 @@ Go to the admin page (`/admin.html`). Here you can:
 **Who can grant what:** Admins can create and manage **Read** and **Write**
 members only. **Granting Admin can only be done by Root.**
 
+### Groups (partner-society collaboration)
+
+The database supports multiple societies sharing one catalogue. Every account
+belongs to a **group** — either the home society (whoever runs the system),
+the **Independent** catch-all group, or a partner-society group that Root has
+created.
+
+What this means in practice for Admins:
+
+- **Partner-society Admins** can manage only their own group's members and
+  the entries those members contributed. They can see only their own
+  group's roster on the admin page; the wider directory isn't visible to
+  them.
+- **Home-society Admins** see every account and every entry, regardless of
+  group. They're the gatekeepers for promoting anyone to Admin (partner
+  Admins themselves can only create Read/Write members within their group).
+- **Group affiliations are stable.** A user's group can only be changed by
+  **Root** — there is no admin flow to move people around, deliberately, so
+  partner Admins can't "kidnap" members into their own group.
+
+Read/Write members don't see the directory at all. The group pill on every
+entry tells you which society contributed it; that's the only group-level
+context regular members get.
+
+### Managing groups (Root only)
+
+The admin page shows a **Manage groups** panel to Root. From here you can:
+
+- **Create a new group** with a name, a pill colour, and an optional member
+  quota (leave it blank for unlimited). Quotas count only **active**
+  members, so a deactivated departed member doesn't take up a slot.
+- **Edit** a group's name, colour, or quota. The home group can be renamed
+  and recoloured but never archived or deleted.
+- **Archive** a partner group when the partnership ends. Archived groups
+  freeze: no new accounts can be created in them and no edits accepted,
+  but existing members can still sign in to view their history. Archive is
+  reversible — Root can unarchive at any time.
+- **Delete** an empty group. The system refuses if any members remain, so
+  Root must reassign or remove them first.
+
 ### The Root account and "Transfer Crown"
 
-There is always exactly **one** Root. You don't promote someone to Root —
-instead the current Root uses **Transfer Crown** to hand the role over to
-another member. This matters at committee handover: before the outgoing person
-leaves, they should **transfer the crown** to the incoming head, and the society
-should record who currently holds it. If the sole Root account is lost and the
+There is always exactly **one** Root, and Root always sits in the **home
+group**. You don't promote someone to Root — instead the current Root uses
+**Transfer Crown** to hand the role over to another member of the home group.
+
+If the intended successor is currently in a partner group, Root has to move
+them into the home group first (via the inline group dropdown on the edit-user
+row) before the transfer button accepts them.
+
+This matters at committee handover: before the outgoing person leaves, they
+should **transfer the crown** to the incoming head, and the society should
+record who currently holds it. If the sole Root account is lost and the
 password is gone, regaining control is painful — so guard it and keep its
 recovery details with the committee, not one individual.
 
