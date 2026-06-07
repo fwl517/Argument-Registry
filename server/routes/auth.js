@@ -11,7 +11,7 @@ const express = require('express');
 const db = require('../db');
 const config = require('../config');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { allowAuthOrReset } = require('../middleware/auth');
+const { allowAuthOrReset, requireAuth } = require('../middleware/auth');
 const { hashPassword, verifyPassword } = require('../utils/password');
 const {
   createSession,
@@ -162,6 +162,48 @@ router.post(
       req.actingSessionId,
     ]);
     return res.json({ ok: true });
+  })
+);
+
+// ── POST /api/auth/change-username ──────────────────────────────────────────
+// A signed-in member can rename themselves. Society role and group affiliation
+// remain admin-managed.
+router.post(
+  '/change-username',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { username } = req.body || {};
+
+    const fields = {};
+    if (typeof username !== 'string' || username.trim() === '') {
+      fields.username = 'Required.';
+    } else if (username.trim().length > 100) {
+      fields.username = 'Must be 100 characters or fewer.';
+    }
+    if (Object.keys(fields).length > 0) {
+      return res.status(422).json({ error: 'VALIDATION', fields });
+    }
+
+    const newUsername = username.trim();
+    if (newUsername === req.user.username) {
+      return res.json({ ok: true, username: newUsername });
+    }
+
+    try {
+      await db.query('UPDATE users SET username = $1 WHERE id = $2', [
+        newUsername,
+        req.user.id,
+      ]);
+    } catch (err) {
+      if (err.code === '23505') {
+        return res
+          .status(422)
+          .json({ error: 'VALIDATION', fields: { username: 'Already taken.' } });
+      }
+      throw err;
+    }
+
+    return res.json({ ok: true, username: newUsername });
   })
 );
 

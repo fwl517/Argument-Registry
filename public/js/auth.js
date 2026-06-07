@@ -105,7 +105,12 @@ export function buildNav(session) {
   nav.appendChild(el('span', { class: 'nav-sep' }));
 
   const role = session.society_role ? ` · ${esc(session.society_role)}` : '';
-  const chip = el('span', { class: 'nav-user' });
+  const chip = el('a', {
+    class: 'nav-user',
+    href: '/account.html',
+    title: 'Manage your account',
+  });
+  if (here === 'account.html') chip.classList.add('is-active');
   chip.innerHTML = `<strong>${esc(session.username)}</strong><span>${esc(session.permission)}${role}</span>`;
   nav.appendChild(chip);
 

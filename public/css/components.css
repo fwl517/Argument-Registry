@@ -97,7 +97,17 @@
   gap: var(--sp-2);
   font-size: 0.85rem;
   color: var(--brass-soft);
-  padding-left: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.nav-user:hover {
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+.nav-user.is-active {
+  background: rgba(176, 141, 87, 0.22);
 }
 .nav-user strong { color: #FFFFFF; font-weight: 600; }
 

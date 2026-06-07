@@ -1,0 +1,62 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My account · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.png" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <div class="page-head">
+      <p class="eyebrow">Your account</p>
+      <h1>My account</h1>
+      <hr class="rule-brass" />
+      <p class="lede">Update your display name. Your permission level, society role
+        and group affiliation are managed by an administrator.</p>
+    </div>
+
+    <section class="panel mt-5">
+      <h2>Change username</h2>
+      <p class="muted text-sm">This is the name shown alongside your contributions
+        throughout the site.</p>
+      <form id="username-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label for="username">Username</label>
+            <input class="input" type="text" id="username" name="username"
+                   autocapitalize="none" spellcheck="false" maxlength="100" />
+            <div class="field-error"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="username-btn">Save</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="/js/account.js"></script>
+</body>
+</html>
