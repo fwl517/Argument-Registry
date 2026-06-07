@@ -15,7 +15,7 @@
     "import": "node scripts/import.js"
   },
   "dependencies": {
-    "archiver": "^8.0.0",
+    "archiver": "^7.0.1",
     "argon2": "^0.41.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
