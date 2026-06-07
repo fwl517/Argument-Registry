@@ -7,3 +7,10 @@ coverage/
 dist/
 db/filestore/*
 package-lock.json
+
+# Exports / backups produced by /api/export and /api/export/backup.
+# These contain entry data (and, for Root backups, password hashes) and must
+# never be committed.
+*.zip
+political-society-*.zip
+

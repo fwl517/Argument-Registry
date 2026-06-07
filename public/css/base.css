@@ -161,6 +161,9 @@ img { max-width: 100%; display: block; }
   max-width: 60ch;
   margin: 0;
 }
+.page-head-actions {
+  margin: var(--sp-4) 0 0;
+}
 
 .stack > * + * { margin-top: var(--sp-4); }
 .stack-sm > * + * { margin-top: var(--sp-2); }

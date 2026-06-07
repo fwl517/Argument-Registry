@@ -92,6 +92,19 @@
       </div>
     </section>
 
+    <!-- Full system backup (Root only) -->
+    <section class="panel mt-6 hidden" id="backup-panel">
+      <h2>System backup</h2>
+      <div class="alert alert--warn">
+        Downloads a complete copy of the database — every entry, every user
+        account (including password hashes) and every uploaded file. Treat the
+        resulting file as secret: it can fully restore this system.
+      </div>
+      <div class="row">
+        <a class="btn" href="/api/export/backup" download>Download backup (zip)</a>
+      </div>
+    </section>
+
     <!-- Transfer Crown (Root only) -->
     <section class="panel mt-6 hidden" id="crown-panel">
       <h2>Transfer Root</h2>

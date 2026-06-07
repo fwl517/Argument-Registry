@@ -358,49 +358,95 @@ records pointing at files that aren't there, or files nobody can find.
 If only one section survives this document, let it be this one. Without backups,
 a disk failure loses the society's entire archive.
 
-### Backing up the database
+### The easy way: download a backup from the admin page
 
-PostgreSQL ships with a backup tool, `pg_dump`. To save the whole database to a
-single file (run from the terminal, using your connection string):
+The system has a built-in backup feature, and it's the recommended one for
+day-to-day use. Sign in as **Root**, go to `/admin.html`, and click **Download
+backup (zip)**. You get a single `.zip` file containing **everything**:
 
-```bash
-pg_dump "postgresql://psdb_app:CHOOSE_A_PASSWORD@localhost:5432/political_society" > backup-2026-06-07.sql
-```
+- every entry, public and private, with all its links, keywords and clash-map
+  connections;
+- every uploaded file;
+- every member account, including password hashes (so people stay signed in
+  with their existing passwords after a restore).
 
-Name the file with the date. Do this on a schedule — weekly at least, ideally
-automatically. On Linux/macOS you can automate with `cron`; on Windows with Task
-Scheduler.
+Save this `.zip` somewhere safe — ideally on a different machine or an external
+drive — and treat it as **secret**, because it contains all the password hashes
+and any private entries.
 
-### Backing up the uploaded files
+Do this on a schedule. Weekly is the floor for an active society. If somebody
+on the committee is comfortable scripting it, `curl` plus a saved cookie can
+automate the download; otherwise put a recurring reminder in the calendar of
+whoever holds the Root account.
 
-Simply copy the entire `FILE_STORE_PATH` folder somewhere safe (an external
-drive, another machine, cloud storage). For example:
-
-```bash
-# macOS / Linux
-cp -r /home/yourname/ps-files /path/to/safe-backup/ps-files-2026-06-07
-```
+> The backup deliberately leaves out **active login sessions**, so a restore
+> never re-activates somebody's old browser session.
 
 ### Keep the `.env` too
 
 Keep a private copy of your `.env` somewhere secure (it holds the database
-password and settings). Don't store it anywhere public.
+password and settings). Don't store it anywhere public. The backup `.zip`
+does *not* include `.env`, because `.env` is unique to each machine.
 
-### Restoring onto a fresh machine
+### Restoring from a downloaded backup
+
+This is how to bring the system up on a fresh machine using a `.zip` you
+produced with the Download backup button.
+
+1. Install Node.js and PostgreSQL as in Part A (Steps 1–2).
+2. Get the project files in place (Step 3) and run `npm install` (Step 4).
+3. Recreate the database and user (Step 5) and your `.env` (Step 6).
+4. Create the empty database structure:
+   ```bash
+   npm run migrate
+   ```
+   **Do not run `npm run seed-root`** — the backup already contains the Root
+   account and the import will fail if a Root already exists.
+5. Make sure the `FILE_STORE_PATH` folder exists (Step 8). The import will
+   write the uploaded files into it.
+6. Run the import, pointing it at your backup file:
+   ```bash
+   npm run import -- /path/to/political-society-backup-2026-06-07.zip
+   ```
+   You'll see it report how many users, sources, entries and relations were
+   restored.
+7. Start the server (`npm start`) and sign in with the same usernames and
+   passwords as before. The system is back exactly as it was at the moment of
+   backup.
+
+Test this occasionally on a spare machine. A backup you've never restored is
+a backup you don't actually know works.
+
+### Manual alternative: pg_dump (advanced)
+
+If you prefer the standard PostgreSQL backup tool, or want to keep a second
+independent backup format, you can also use `pg_dump`. This takes a bit more
+care because the uploaded files live in a separate folder from the database.
+
+```bash
+# 1. The database
+pg_dump "postgresql://psdb_app:CHOOSE_A_PASSWORD@localhost:5432/political_society" > backup-2026-06-07.sql
+
+# 2. The uploaded files (macOS / Linux)
+cp -r /home/yourname/ps-files /path/to/safe-backup/ps-files-2026-06-07
+```
+
+To restore from a `pg_dump`:
 
 1. Install Node.js and PostgreSQL as in Part A.
 2. Recreate the database and user (Step 5) and your `.env` (Step 6).
-3. Restore the database from your dump:
+3. Restore the database from your dump (into an empty database — don't run
+   `npm run migrate` first):
    ```bash
    psql "postgresql://psdb_app:PASSWORD@localhost:5432/political_society" < backup-2026-06-07.sql
    ```
-   (Restore into an empty database. Don't run `npm run migrate` first if the
-   dump already contains the full structure.)
 4. Copy your backed-up files back into the `FILE_STORE_PATH` folder.
 5. `npm install`, then `npm start`.
 
-Test a restore occasionally on a spare machine. A backup you've never restored
-is a backup you don't actually know works.
+The advantage of `pg_dump` is that it captures the database exactly as
+PostgreSQL stores it. The drawback is that you have to remember the uploaded
+files separately — forgetting them produces a "restored" system where every
+attachment is broken.
 
 ---
 

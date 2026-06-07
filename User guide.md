@@ -90,6 +90,30 @@ Click through to view an attached PDF/TXT/PNG/etc.. The file opens in your brows
 system checks you're allowed to see it (the same public/private rule as the
 entry it belongs to), so private files stay private.
 
+### Downloading the data
+
+Both the public listing and the members' dashboard have a **Download** button
+just under the page title. It produces a single `.zip` containing every entry
+you can see (public-only for visitors, all entries for signed-in members),
+the sources and keywords they reference, the clash-map links between them,
+and all the uploaded files.
+
+Two things to know about what the download includes:
+
+- **Anonymous entries stay anonymous.** If you upload something anonymously,
+  your name is removed from the downloaded copy too — not just hidden in the
+  webpage. Anyone receiving the file sees the entry attributed to "anonymous".
+- **Other uploaders show as display names only.** The download contains the
+  uploader's username and society role for attribution, but no underlying
+  account information. Someone importing the file into another instance gets
+  the names as labels — they don't become real accounts on that system, and
+  nobody can log in as them.
+
+This is useful for sharing the society's archive with a sister society, for
+keeping your own copy of public material, or for transferring everything to a
+new instance of the system. To bring a downloaded file into a different
+instance, see the Installation guide for the `npm run import` command.
+
 ---
 
 ## Part B — Running the society (admin guide)
@@ -120,13 +144,34 @@ should record who currently holds it. If the sole Root account is lost and the
 password is gone, regaining control is painful — so guard it and keep its
 recovery details with the committee, not one individual.
 
+### Full system backup (Root only)
+
+Root has a **Download backup (zip)** button on the admin page. Unlike the
+public/member download, this contains *everything* — every member account
+including the stored password hashes, every entry whether public or private,
+the full clash map, and every uploaded file. The resulting file is a complete
+copy of the system and can be used to restore it onto a fresh machine.
+
+Treat the backup `.zip` as **secret**. Anyone holding it has the same
+information the database holds. Store it somewhere only the committee can
+reach (an encrypted drive, an admin-only shared folder, etc.).
+
+Make a backup on a sensible schedule — weekly at least for an active society,
+and always immediately before any major change (committee handover, server
+move, software update). One backup you can find is worth ten you can't.
+
+Step-by-step restore instructions are in the Installation and maintenance
+guide, Part C.
+
 ### A sensible handover checklist
 
 When committee changes:
 
 1. Current Root transfers the crown to the new head.
 2. Update Admin accounts: add the new committee, demote the leavers from admin.
-3. Confirm backups are running and someone new understands the `Installation and maintainence guide.md`.
-4. Pass on: the `.env` file (securely), where the `FILE_STORE_PATH` folder is,
+3. Take a fresh **system backup** (above) and store it with the committee
+   records, separately from the running server.
+4. Confirm backups are running and someone new understands the `Installation and maintainence guide.md`.
+5. Pass on: the `.env` file (securely), where the `FILE_STORE_PATH` folder is,
    and how to start/stop the server (`Installation and maintainence guide.md` Part A, Steps 10 and 12).
 

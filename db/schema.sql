@@ -243,32 +243,51 @@ CREATE TRIGGER trg_block_preset_source_deletion
 -- ================================================================
 
 CREATE TABLE entries (
-    id                  UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
-    title               VARCHAR(500)      NOT NULL,
-    topic               VARCHAR(500)      NOT NULL,
-    stance              t_stance          NOT NULL,
-    argument_type       t_argument_type   NOT NULL,
-    source_type         t_source_type     NOT NULL,
-    source_id           INTEGER           REFERENCES sources(id) ON DELETE SET NULL,
-    date_published      DATE,
-    gist                TEXT              NOT NULL,
-    is_private          BOOLEAN           NOT NULL DEFAULT TRUE,
-    link                VARCHAR(2048),
-    local_path          VARCHAR(1024),
-    uploader_id         UUID              NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    anonymise_uploader  BOOLEAN           NOT NULL DEFAULT FALSE,
-    created_at          TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
+    id                       UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+    title                    VARCHAR(500)      NOT NULL,
+    topic                    VARCHAR(500)      NOT NULL,
+    stance                   t_stance          NOT NULL,
+    argument_type            t_argument_type   NOT NULL,
+    source_type              t_source_type     NOT NULL,
+    source_id                INTEGER           REFERENCES sources(id) ON DELETE SET NULL,
+    date_published           DATE,
+    gist                     TEXT              NOT NULL,
+    is_private               BOOLEAN           NOT NULL DEFAULT TRUE,
+    link                     VARCHAR(2048),
+    local_path               VARCHAR(1024),
+    uploader_id              UUID              REFERENCES users(id) ON DELETE RESTRICT,
+    foreign_uploader_name    VARCHAR(100),
+    foreign_uploader_role    t_society_role,
+    anonymise_uploader       BOOLEAN           NOT NULL DEFAULT FALSE,
+    created_at               TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_link_or_local
-        CHECK (link IS NOT NULL OR local_path IS NOT NULL)
+        CHECK (link IS NOT NULL OR local_path IS NOT NULL),
+
+    -- Identity rules:
+    --   * Real uploader      : uploader_id set, foreign_* null.
+    --   * Foreign import     : uploader_id null, foreign_uploader_name set (display only).
+    --   * Anonymous          : all identity columns null, anonymise_uploader = TRUE.
+    --   * Real + anonymised  : uploader_id set, foreign_* null, anonymise_uploader = TRUE
+    --                          (serialiser still hides the name).
+    -- Foreign and anonymous can never co-exist on the same row — anonymous foreign
+    -- imports just drop identity entirely.
+    CONSTRAINT chk_uploader_identity CHECK (
+        NOT (uploader_id IS NOT NULL AND foreign_uploader_name IS NOT NULL)
+        AND NOT (foreign_uploader_name IS NOT NULL AND anonymise_uploader = TRUE)
+        AND (uploader_id IS NOT NULL OR foreign_uploader_name IS NOT NULL OR anonymise_uploader = TRUE)
+    )
 );
 
 COMMENT ON COLUMN entries.source_type IS 'Category of the source material (what kind of document).';
 COMMENT ON COLUMN entries.source_id   IS 'Specific party or organisation. FK to sources table. Nullable.';
 COMMENT ON COLUMN entries.local_path  IS 'Relative path from FILE_STORE_PATH root. Served via /api/files only.';
 COMMENT ON COLUMN entries.anonymise_uploader IS 'When TRUE, server scrubs identity before JSON serialisation.';
-COMMENT ON CONSTRAINT chk_link_or_local ON entries IS 'Every entry must have at least a URL or a local file.';
+COMMENT ON COLUMN entries.foreign_uploader_name IS 'Display-only uploader name for entries imported from another instance. Never references a real user account.';
+COMMENT ON COLUMN entries.foreign_uploader_role IS 'Display-only society role accompanying foreign_uploader_name.';
+COMMENT ON CONSTRAINT chk_link_or_local      ON entries IS 'Every entry must have at least a URL or a local file.';
+COMMENT ON CONSTRAINT chk_uploader_identity  ON entries IS 'Exactly one of real uploader, foreign uploader, or anonymous — never two at once.';
 
 CREATE OR REPLACE FUNCTION fn_lock_entry_id()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -354,7 +373,7 @@ CREATE TABLE argument_relations (
     target_id       UUID        NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
     relation_type   t_relation  NOT NULL,
     context_note    TEXT        NOT NULL,
-    created_by      UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_by      UUID        REFERENCES users(id) ON DELETE RESTRICT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_no_self_link    CHECK  (source_id != target_id),
@@ -362,6 +381,7 @@ CREATE TABLE argument_relations (
 );
 
 COMMENT ON COLUMN argument_relations.context_note IS 'Required. The strategic angle: how/why source clashes with or updates target.';
+COMMENT ON COLUMN argument_relations.created_by  IS 'Nullable: foreign-imported relations have no local creator.';
 
 CREATE INDEX idx_rel_source ON argument_relations(source_id);
 CREATE INDEX idx_rel_target ON argument_relations(target_id);

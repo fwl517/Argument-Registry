@@ -29,11 +29,13 @@ function buildSource(row) {
  * THE ANONYMISATION RULE (server-wide, see 02_api_design.md):
  *   - `uploader_id` (raw UUID) is removed from every payload unconditionally.
  *   - anonymise_uploader = TRUE  -> uploader = { name: "Anonymous Member", role: null }
- *   - anonymise_uploader = FALSE -> uploader = { name: <username>, role: <society_role> }
+ *   - anonymise_uploader = FALSE, real user        -> { name: <username>, role: <society_role> }
+ *   - anonymise_uploader = FALSE, foreign import   -> { name: <foreign_name>, role: <foreign_role> }
  *   - the `anonymise_uploader` flag itself is stripped from the payload.
  *
  * The row is expected to carry joined uploader columns
- * (uploader_username, uploader_role) so no extra query is needed.
+ * (uploader_username, uploader_role) and the denormalised foreign_uploader_*
+ * columns so no extra query is needed.
  *
  * @param {object} row    a joined entries row
  * @param {string[]} [keywords]  tag slugs for this entry
@@ -62,12 +64,19 @@ function serialiseEntry(row, keywords = []) {
     entry.uploader = { name: 'Anonymous Member', role: null };
   } else if (row.uploader_username) {
     entry.uploader = { name: row.uploader_username, role: row.uploader_role };
+  } else if (row.foreign_uploader_name) {
+    entry.uploader = {
+      name: row.foreign_uploader_name,
+      role: row.foreign_uploader_role || null,
+    };
   } else {
     // Uploader row missing (e.g. dangling reference) — fail safe.
     entry.uploader = { name: 'Unknown', role: null };
   }
 
-  // uploader_id and anonymise_uploader are deliberately never copied across.
+  // uploader_id, foreign_uploader_*, and anonymise_uploader are deliberately
+  // never copied across — the resolved `uploader` field is the only identity
+  // surface in the public API.
   return entry;
 }
 

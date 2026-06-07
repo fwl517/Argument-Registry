@@ -219,6 +219,13 @@ function setupCreateForm() {
   });
 }
 
+/* — Backup panel (Root only) ——————————————————————————————— */
+function setupBackupPanel() {
+  const panel = $('#backup-panel');
+  if (!panel) return;
+  if (hasPermission(session, 'Root')) panel.classList.remove('hidden');
+}
+
 /* — Transfer Crown (Root only) ————————————————————————————— */
 function setupTransferCrown() {
   const panel = $('#crown-panel');
@@ -297,6 +304,7 @@ async function init() {
   $('#admin-scope').textContent = scope;
 
   setupCreateForm();
+  setupBackupPanel();
   setupTransferCrown();
   await load();
 }

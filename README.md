@@ -193,6 +193,8 @@ All endpoints are under `/api`. Errors use the shape
 | `POST /users/:id/force-reset`         | Admin+        | Issue a new temporary password.          |
 | `POST /users/transfer-crown`          | Root          | Hand the Root role to another member.    |
 | `POST /files` · `GET /files/:filename`| Write+ / access-checked | Upload / view a stored file.   |
+| `GET  /export`                        | optional      | Zip of all visible data (public or member scope). |
+| `GET  /export/backup`                 | Root          | Complete database backup (zip).          |
 | `GET  /health`                        | public        | Liveness + DB check.                     |
 
 ---
@@ -239,6 +241,41 @@ system font stacks** rather than web fonts, and applies all dynamic styling
 (e.g. party badge colours) through the CSSOM from JavaScript.
 
 ---
+
+## Export & import
+
+Three download modes:
+
+- **Public** (`GET /api/export`, unauthenticated) — every non-private entry,
+  along with the sources and keywords they reference and the relations between
+  them. Anonymised entries get `uploader: null`; otherwise the uploader is a
+  display string (`{ username, role }`). No `uploader_id`, no password hashes,
+  no users-table data.
+- **Member** (`GET /api/export`, signed in) — same shape, plus private entries
+  and files. Anonymisation still applied.
+- **Backup** (`GET /api/export/backup`, Root only) — every table verbatim
+  (`users` with password hashes, `sources`, `keywords`, `entries`,
+  `entry_keywords`, `argument_relations`), plus all stored files. `sessions`
+  is excluded so a restore doesn't leave pre-backup logins valid. The result
+  is round-trippable into a fresh database via the import script.
+
+Every export is a zip containing `manifest.json` (scope + counts),
+`data.json`, and a `files/` directory keyed by basename.
+
+To import:
+
+```bash
+npm run import -- /path/to/political-society-public-2026-06-07.zip
+```
+
+Public/member imports are additive: sources upsert by name, keywords upsert by
+tag, entries always insert as new rows (the foreign export's UUIDs are remapped),
+and uploader info lands as a display-only `foreign_uploader_name` /
+`foreign_uploader_role` on each entry — no rows are added to the `users` table.
+
+Backup imports require an empty target database (run `npm run migrate` against
+a fresh DB but do **not** run `npm run seed-root`) and preserve every UUID,
+sequence, and password hash.
 
 ## Credits
 
