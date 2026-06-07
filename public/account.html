@@ -55,6 +55,38 @@
         </div>
       </form>
     </section>
+
+    <section class="panel mt-5">
+      <h2>Change password</h2>
+      <p class="muted text-sm">Saving signs you out of any other browsers or
+        devices where you're currently logged in.</p>
+      <form id="password-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label for="current_password">Current password</label>
+            <input class="input" type="password" id="current_password"
+                   name="current_password" autocomplete="current-password" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="new_password">New password</label>
+            <input class="input" type="password" id="new_password"
+                   name="new_password" autocomplete="new-password" minlength="12" />
+            <div class="hint">Minimum 12 characters.</div>
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm new password</label>
+            <input class="input" type="password" id="confirm_password"
+                   name="confirm_password" autocomplete="new-password" />
+            <div class="field-error"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="password-btn">Update password</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <script type="module" src="/js/account.js"></script>
