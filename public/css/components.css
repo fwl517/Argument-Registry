@@ -666,11 +666,27 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 /* — Footer ———————————————————————————————————————————————— */
 .site-foot {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--brass);
+  background-color: var(--ink);
   margin-top: var(--sp-8);
-  padding: var(--sp-5) 0;
+  padding: var(--sp-5) var(--sp-5);
   color: var(--text-faint);
   font-size: 0.82rem;
+}
+.site-foot-inner > a:link {
+  color: #F3EFE7;
+}
+.site-foot-inner > a:hover {
+  color: var(--brass-soft);
+}
+.site-foot-inner > a:visited {
+  color: var(--brass-deep);
+}
+.site-foot-inner > a:active {
+  color: var(--brass);
+}
+.site-foot-inner > strong {
+  color: var(--brass);
 }
 
 /* — Responsive ————————————————————————————————————————————— */
