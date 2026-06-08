@@ -13,13 +13,14 @@ original creator present**. Keep it somewhere safe alongside the project files.
 
 1. [What this system actually is](#1-what-this-system-actually-is)
 2. [The big picture before you start](#2-the-big-picture-before-you-start)
-3. [Part A — Installing the system, step by step](#part-a--installing-the-system-step-by-step)
-4. [Part B — Where everything is stored](#part-b--where-everything-is-stored)
-5. [Part C — Backing up and restoring (read this)](#part-c--backing-up-and-restoring-read-this)
-6. [Part D — Inviting other societies (groups)](#part-d--inviting-other-societies-groups)
-7. [Part E — Customisation](#part-e--customisation)
-8. [Part F — Keeping it running and fixing problems](#part-f--keeping-it-running-and-fixing-problems)
-9. [Glossary](#glossary)
+3. [Quick start (using the scripts)](#3-quick-start-using-the-scripts)
+4. [Part A — Installing the system, step by step](#part-a--installing-the-system-step-by-step)
+5. [Part B — Where everything is stored](#part-b--where-everything-is-stored)
+6. [Part C — Backing up and restoring (read this)](#part-c--backing-up-and-restoring-read-this)
+7. [Part D — Inviting other societies (groups)](#part-d--inviting-other-societies-groups)
+8. [Part E — Customisation](#part-e--customisation)
+9. [Part F — Keeping it running and fixing problems](#part-f--keeping-it-running-and-fixing-problems)
+10. [Glossary](#glossary)
 
 ---
 
@@ -72,6 +73,87 @@ database and start it. After that, day-to-day use is just opening a web browser.
 
 This guide assumes you are working directly on the computer that will run the
 system.
+
+---
+
+## 3. Quick start (using the scripts)
+
+The project ships with two helper scripts that automate the install. They do
+exactly the same work as [Part A](#part-a--installing-the-system-step-by-step)
+below, just without you having to type each step. Use this section if you
+just want the system up and running; use Part A if you'd rather understand
+each step or something has gone wrong with the scripts.
+
+The scripts **cannot** install Node.js or PostgreSQL themselves — those need
+their own installers with administrator rights. So you still do Steps 1 and 2
+of Part A by hand (install Node.js from `https://nodejs.org` and PostgreSQL
+from `https://www.postgresql.org/download/`). After that, the scripts take
+over.
+
+### One-time setup
+
+Open a terminal inside the project folder (the one containing `package.json`)
+and run **one** of these, matching your operating system:
+
+```bash
+# macOS / Linux
+bash setup.sh
+
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File setup.ps1
+```
+
+The script will:
+
+1. Check that Node.js (20+) and PostgreSQL are installed and complain
+   helpfully if not.
+2. Run `npm install` for you.
+3. Ask you a few short questions:
+   - **Database name** (just press Enter for the default `political_society`).
+   - **Database username** (just press Enter for the default `psdb_app`).
+   - **A password for that database user** — choose a strong one. The script
+     asks you to type it twice, doesn't show it as you type, and saves it
+     into your `.env` file. Keep your own copy somewhere safe.
+   - **A folder for uploaded files** (defaults to `political-society-files`
+     inside your home folder — fine for most people).
+   - **A port number** (just press Enter for the default `3000`).
+4. Create the database and database user inside PostgreSQL. This step needs
+   to log in to PostgreSQL as the `postgres` superuser:
+   - On the Windows / macOS official installer, it'll prompt for the
+     `postgres` password you set when you installed PostgreSQL.
+   - On Debian/Ubuntu it'll try `sudo -u postgres` first (no password needed
+     if you're an administrator).
+5. Write your `.env` file.
+6. Build the database structure.
+7. Create the uploads folder.
+8. Create the **Root** administrator account and print a one-time temporary
+   password. **Copy it immediately** — it's shown only once. You'll be made
+   to change it on first sign-in.
+
+The script is safe to re-run. If a `.env` already exists it offers to keep
+it and skip the database-creation step; if a Root account already exists it
+leaves it alone.
+
+### Starting the website (every time)
+
+Once setup has been done once, the daily start-up is a single command:
+
+```bash
+# macOS / Linux
+bash start.sh
+
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File start.ps1
+```
+
+This checks that PostgreSQL is running, starts the website, and opens your
+default web browser at the home page once it's ready. Leave the terminal
+window open — closing it (or pressing Ctrl+C inside it) stops the website.
+If PostgreSQL is stopped, the script prints the exact command to start it
+again on your system.
+
+If anything goes wrong, work through Part A by hand to see which step the
+script choked on. The two paths produce an identical setup.
 
 ---
 
