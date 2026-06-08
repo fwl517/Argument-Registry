@@ -87,6 +87,7 @@ export function buildNav(session) {
 
   if (!session) {
     nav.appendChild(link('/index.html', 'Browse'));
+    nav.appendChild(link('/graph.html', 'Clash map'));
     nav.appendChild(el('span', { class: 'nav-sep' }));
     nav.appendChild(el('a', { href: '/login.html', class: 'btn btn--brass btn--sm', text: 'Sign in' }));
     return;
@@ -94,6 +95,7 @@ export function buildNav(session) {
 
   nav.appendChild(link('/dashboard.html', 'Dashboard'));
   nav.appendChild(link('/index.html', 'Public view'));
+  nav.appendChild(link('/graph.html', 'Clash map'));
 
   if (hasPermission(session, 'Write')) {
     nav.appendChild(link('/upload.html', 'New entry'));

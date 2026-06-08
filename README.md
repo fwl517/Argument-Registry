@@ -138,13 +138,16 @@ political-society-db/
 │   │   ├── errorHandler.js     asyncHandler, HttpError, JSON error responses
 │   │   └── upload.js           Multer config (PDF/TXT, 50 MB, UUID filenames)
 │   ├── routes/
-│   │   ├── auth.js             session / login / logout / change-password
+│   │   ├── auth.js             session / login / logout / change-password / change-username
 │   │   ├── users.js            user CRUD, force-reset, transfer-crown
 │   │   ├── sources.js          list / create party-source records
+│   │   ├── groups.js           list (public) + create / patch / archive / delete (Root)
 │   │   ├── entries.js          list+filter, detail+clash map, create/edit/delete, relations
 │   │   ├── keywords.js         list / upsert keyword tags
 │   │   ├── relations.js        delete a relation
 │   │   ├── files.js            upload + access-checked inline file serving
+│   │   ├── export.js           zip export (public / member / Root backup)
+│   │   ├── graph.js            clash-map graph endpoint (visibility-scoped, BFS + random fill)
 │   │   └── health.js           liveness + DB ping
 │   └── utils/
 │       ├── password.js         Argon2id hashing + temp-password generation
@@ -155,14 +158,17 @@ political-society-db/
     ├── index.html              Public listing
     ├── login.html              Sign in
     ├── dashboard.html          Members' listing
-    ├── entry.html              Detail + clash map
+    ├── entry.html              Detail + clash map + mini-graph
+    ├── graph.html              Full clash-map graph (pan + zoom)
     ├── upload.html             New entry
     ├── edit.html               Edit entry
+    ├── account.html            Self-service username + password change
     ├── reset-password.html     Forced password change
-    ├── admin.html              Member management
+    ├── admin.html              Member + group management
     ├── css/  base.css, components.css
-    └── js/   api, utils, auth, modal, search, entries, entry,
-              relations, upload, admin, listing, login, reset-password
+    └── js/   api, utils, auth, modal, search, entries, entry, graph,
+              full-graph, relations, upload, admin, account, listing,
+              login, reset-password
 ```
 
 ---
@@ -178,6 +184,7 @@ All endpoints are under `/api`. Errors use the shape
 | `POST /auth/login`                    | none          | Sign in (rate-limited).                  |
 | `POST /auth/logout`                   | session       | End the session.                         |
 | `POST /auth/change-password`          | session/reset | Change password / complete forced reset. |
+| `POST /auth/change-username`          | session       | Self-service username change.            |
 | `GET  /entries`                       | optional      | List with filters + pagination.          |
 | `GET  /entries/:id`                   | optional      | Detail + 8-category clash map.           |
 | `POST /entries`                       | Write+        | Create (multipart).                      |
@@ -199,6 +206,7 @@ All endpoints are under `/api`. Errors use the shape
 | `POST /files` · `GET /files/:filename`| Write+ / access-checked | Upload / view a stored file.   |
 | `GET  /export`                        | optional      | Zip of all visible data (public or member scope). |
 | `GET  /export/backup`                 | Root          | Complete database backup (zip).          |
+| `GET  /graph`                         | optional      | Nodes + edges for the clash-map graph. Optional `?from=<id>` for one component, `?max=N` cap. |
 | `GET  /health`                        | public        | Liveness + DB check.                     |
 
 ---

@@ -39,6 +39,24 @@ For security, the login screen gives the same "unauthorised" message whether the
 username is wrong, the password is wrong, or the account is disabled — so a
 failed login won't tell you which part was wrong. Double-check both.
 
+### Managing your own account
+
+Click your name in the top-right of any page to reach `/account.html` — a
+small settings page where you can:
+
+- **Change your username.** This is the display name shown alongside your
+  contributions. It must still be unique across the whole platform; if the
+  name you pick is already taken, the system will tell you.
+- **Change your password.** Enter your current password, then a new one
+  (12 characters minimum), then confirm. Saving signs you out of every
+  *other* browser or device you're logged in on — the current one stays
+  active.
+
+Your permission level (Read/Write/Admin/Root), society role
+(President/Treasurer/etc.) and group affiliation are all set by an
+administrator — you can see them on the page header but can't change them
+yourself. If you need any of those updated, ask an Admin.
+
 ### Browsing entries
 
 - The **public page** (`/`) shows only entries marked public.
@@ -86,6 +104,38 @@ The point of the system is connecting arguments. On an entry's detail page
 another. These links build up into the clash map, an eight-category picture of
 how the arguments relate. Write permission lets you add links; removing a link
 needs Admin.
+
+### The clash-map graph (visual network)
+
+The catalogue has a graph view that shows the clash map as a network of
+circles and arrows rather than a list of cards. There are two surfaces:
+
+- On every entry page, the right column shows a **mini graph** of just the
+  entries connected to the one you're looking at (one or more hops away).
+  The entry you're on is the larger ringed circle in the middle. Other nodes
+  are clickable — selecting one navigates to that entry. Hovering a node
+  dims everything that isn't directly connected to it, making dense clusters
+  easier to read.
+- The full **Clash map** page (`/graph.html`, linked from the nav) shows the
+  wider network. Drag empty space to **pan**, scroll to **zoom**, and drag
+  any node to reposition it. Click a node to open that entry.
+
+Colours follow the rest of the site:
+
+- **Node fill** is the entry's stance — green for Pro, red for Con, grey for
+  Neutral/Background.
+- **Arrow colour** is the relation type — red for Rebuts, orange for
+  Counters, green for Evidence For, grey for Updates.
+
+When two entries are linked in both directions (e.g. A rebuts B and B also
+counters A), the arrows curve to opposite sides so each one stays visible.
+
+For performance and readability the full graph is **capped** (around 150
+nodes at a time). If your catalogue has more, the system shows you a random
+*selection of complete connected clusters* — never half-clusters. Use
+**Re-roll random sample** at the top to load a different selection.
+Visibility rules apply throughout: anonymous visitors never see a private
+entry's title appear in either graph view.
 
 ### Editing and deleting
 

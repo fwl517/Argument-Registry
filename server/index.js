@@ -25,6 +25,7 @@ const { router: keywordRoutes } = require('./routes/keywords');
 const relationRoutes = require('./routes/relations');
 const fileRoutes = require('./routes/files');
 const exportRoutes = require('./routes/export');
+const graphRoutes = require('./routes/graph');
 const healthRoutes = require('./routes/health');
 
 const app = express();
@@ -100,6 +101,7 @@ app.use('/api/keywords', keywordRoutes);
 app.use('/api/relations', relationRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/graph', graphRoutes); // clash-map visualisation
 
 // Any unmatched /api path is a JSON 404 (never falls through to static).
 app.use('/api', notFound);

@@ -16,6 +16,7 @@ import {
 } from './utils.js';
 import { bootstrap, hasPermission } from './auth.js';
 import { mountRelationEditor, removeRelation } from './relations.js';
+import { renderGraph } from './graph.js';
 
 const RELATION_LABELS = {
   counters: 'Counters',
@@ -356,10 +357,33 @@ function renderEntry(entry) {
   // — Clash map + editor —
   renderClashMap(entry.relations);
   mountRelationEditor($('#relation-editor'), entry.id, session, load);
+  // — Connected-component mini-graph (auto-fit, no pan/zoom) —
+  loadMiniGraph(entry.id);
 
   // Reveal the populated view.
   $('#entry-loading').classList.add('hidden');
   $('#entry-view').classList.remove('hidden');
+}
+
+async function loadMiniGraph(id) {
+  const host = $('#entry-graph');
+  if (!host) return;
+  try {
+    const data = await apiFetch(`/graph?from=${encodeURIComponent(id)}&max=50`, {
+      noRedirect: true,
+    });
+    if (!data) return;
+    renderGraph(host, data, {
+      currentId: id,
+      interactive: false,
+      autoFit: true,
+      showCappedNote: true,
+    });
+  } catch (_err) {
+    host.textContent = '';
+    const p = el('p', { class: 'graph-empty', text: 'Could not load the graph.' });
+    host.appendChild(p);
+  }
 }
 
 async function deleteEntry(entry) {

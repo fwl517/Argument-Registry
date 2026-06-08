@@ -1,0 +1,72 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clash map · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body data-require-auth="false">
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.png" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container container--wide page">
+    <div class="page-head">
+      <p class="eyebrow">Network view</p>
+      <h1>Clash map</h1>
+      <hr class="rule-brass" />
+      <p class="lede">Every entry as a node, every relation as a directed edge.
+        Drag the canvas to pan, scroll to zoom, drag a node to reposition it.
+        Click any node to open that entry.</p>
+    </div>
+
+    <div class="graph-controls">
+      <span class="graph-controls__count" id="graph-count">Loading…</span>
+      <button class="btn btn--ghost btn--sm" type="button" id="graph-refresh">
+        Re-roll random sample
+      </button>
+    </div>
+
+    <div class="graph-full" id="graph-host"></div>
+
+    <p class="graph-legend">
+      <span class="graph-legend__node" data-stance="Pro">Pro</span>
+      <span class="graph-legend__node" data-stance="Con">Con</span>
+      <span class="graph-legend__node" data-stance="Neutral/Background">Neutral</span>
+      <span class="graph-legend__sep">·</span>
+      <span class="graph-legend__edge" data-rel="Rebuts">Rebuts</span>
+      <span class="graph-legend__edge" data-rel="Counters">Counters</span>
+      <span class="graph-legend__edge" data-rel="Evidence For">Evidence For</span>
+      <span class="graph-legend__edge" data-rel="Updates">Updates</span>
+    </p>
+  </main>
+
+  <footer class="site-foot">
+    <p class="site-foot-inner">
+      Built by <strong>Ben Green</strong> ·
+      <a href="https://github.com/fwl517/Argument-Registry"
+        target="_blank" rel="noopener noreferrer">GitHub</a>
+    </p>
+  </footer>
+
+  <script type="module" src="/js/full-graph.js"></script>
+</body>
+</html>

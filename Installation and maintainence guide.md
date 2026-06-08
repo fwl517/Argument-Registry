@@ -29,10 +29,14 @@ It is a private website your society runs on its own computer. Members log in
 and record "entries" — studies, articles, statistics, policy papers and so on.
 Each entry is tagged by stance and by party/source, can have a web link or an
 attached PDF/TXT/PNG/etc. file, and can be connected to other entries to build a "clash
-map" showing how arguments counter, rebut, evidence or update one another.
+map" showing how arguments counter, rebut, evidence or update one another. The
+clash map can be browsed as a list of cards or as an **interactive graph**
+that draws every entry as a node and every link as a coloured arrow.
 
 There is a **public view** that shows only the entries marked public, and a
-**members-only view** (after logging in) that shows everything.
+**members-only view** (after logging in) that shows everything. Logged-in
+members can also reach a small **account page** to change their own username
+or password.
 
 The website is not hosted by an outside company. It runs on a computer you
 control, which means somebody in the society has to install it once and keep
@@ -623,7 +627,7 @@ When the creator (or a successor) provides updated project files:
 - **Permission level** — what an account is allowed to do (Read/Write/Admin/Root).
 - **Society role** — a descriptive label (President, Treasurer, etc.), separate
   from permissions.
-- **Clash map** — the network of directional links between entries.
+- **Clash map** — the network of directional links between entries. Browsable as cards on each entry page, or as a force-directed graph at `/graph.html` (full network) and in a panel on each entry page (just that entry's connected component).
 - **Anonymous entry** — an entry whose author's *name* is hidden as "Anonymous Member". The contributing group is still shown.
 - **Group / affiliation** — which society a user belongs to. The home group (your own society) plus any partner groups Root has invited.
 - **Home group** — the singular founding-society group. Its Admins reach every account in every group.
