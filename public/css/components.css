@@ -365,6 +365,134 @@
 .checkrow label { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text); }
 .checkrow .hint { margin-top: 2px; }
 
+/* ─ Field help tooltips ─
+ * A small "?" affordance next to a label. The explanatory text rides in a
+ * data-tip attribute and is rendered through CSS content: attr(...) so it
+ * stays inside the stylesheet (the CSP forbids inline styles/scripts).
+ * Keyboard-focusable (tabindex="0") so the tip shows on :focus too.
+ */
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: help;
+  position: relative;
+  vertical-align: middle;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.help-tip:hover,
+.help-tip:focus-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+  outline: none;
+}
+.help-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  width: max-content;
+  max-width: 250px;
+  transform: translateX(-50%) translateY(4px);
+  padding: 8px 10px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  text-align: left;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 40;
+}
+.help-tip::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 41;
+}
+.help-tip:hover::after,
+.help-tip:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.help-tip:hover::before,
+.help-tip:focus-visible::before { opacity: 1; }
+/* Flip the bubble below the icon near the top of a scroll container. */
+.help-tip--below::after {
+  bottom: auto;
+  top: calc(100% + 9px);
+  transform: translateX(-50%) translateY(-4px);
+}
+.help-tip--below::before {
+  bottom: auto;
+  top: calc(100% + 4px);
+  border-top-color: transparent;
+  border-bottom-color: var(--ink);
+}
+.help-tip--below:hover::after,
+.help-tip--below:focus-visible::after { transform: translateX(-50%) translateY(0); }
+
+/* ─ Input group: a set of fields where only one is required ─
+ * Used for the link / file / written-text trio on the entry form so it's
+ * visually clear they are alternatives.
+ */
+.input-group {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  margin: 0 0 var(--sp-5);
+  background: var(--surface-2);
+}
+.input-group__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.input-group__req {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.input-group__hint {
+  margin: var(--sp-1) 0 var(--sp-4);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.input-group .field:last-child { margin-bottom: var(--sp-3); }
+
 /* Colour picker pairing */
 .colour-field { display: flex; align-items: center; gap: var(--sp-3); }
 .colour-field input[type="color"] {
@@ -811,6 +939,7 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .clash-group[data-tone="orange"] { --tone: #B5701F;               border-color: #B5701F;               background: rgba(181, 112, 31, 0.18); }
 .clash-group[data-tone="green"]  { --tone: var(--stance-pro);     border-color: var(--stance-pro);     background: rgba(46, 125, 50, 0.15); }
 .clash-group[data-tone="grey"]   { --tone: var(--stance-neutral); border-color: var(--stance-neutral); background: rgba(90, 140, 204, 0.16); }
+.clash-group[data-tone="purple"] { --tone: #6A4C93;               border-color: #6A4C93;               background: rgba(106, 76, 147, 0.16); }
 
 .clash-group__head {
   display: flex; align-items: center; justify-content: space-between;
@@ -836,13 +965,39 @@ table.data tbody tr:hover { background: var(--surface-2); }
   text-transform: uppercase; color: var(--text-faint); font-weight: 700;
 }
 
-/* ─ Entry: right column (clash map) scrolls independently of the left ─ */
+/* ─ Entry: right column (clash map) scrolls independently of the left ─
+ * An always-present, styled scrollbar plus a sticky fade at the bottom edge
+ * make it obvious the column is its own scroll region with more below. */
 @media (min-width: 860px) {
   .detail-grid > aside {
     position: sticky;
     top: var(--sp-5);
     max-height: calc(100vh - var(--sp-7));
-    overflow: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brass-soft) transparent;
+    padding-right: var(--sp-2);
+  }
+  .detail-grid > aside::-webkit-scrollbar { width: 10px; }
+  .detail-grid > aside::-webkit-scrollbar-thumb {
+    background: var(--brass-soft);
+    border-radius: 999px;
+    border: 3px solid var(--parchment);
+  }
+  .detail-grid > aside::-webkit-scrollbar-thumb:hover { background: var(--brass); }
+  /* Sticky fade hint at the bottom of the scroll viewport. The negative margin
+   * keeps it from adding to the scrollable length. */
+  .detail-grid > aside::after {
+    content: '';
+    display: block;
+    position: sticky;
+    bottom: 0;
+    height: 40px;
+    margin-top: -40px;
+    background: linear-gradient(transparent, var(--parchment) 85%);
+    pointer-events: none;
   }
 }
 
@@ -922,9 +1077,11 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 .graph-host {
   position: relative;
-  background: var(--surface-2);
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--surface) 0%, var(--surface-2) 70%, var(--parchment-deep) 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 3px rgba(11, 27, 61, 0.05);
   overflow: hidden;
 }
 .graph-host--interactive { cursor: grab; }
@@ -939,9 +1096,10 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 .graph-mini-panel {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   padding: var(--sp-4);
+  box-shadow: var(--shadow-sm);
 }
 .graph-mini-panel__title {
   margin: 0 0 var(--sp-3);
@@ -954,47 +1112,61 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 .graph-full { height: calc(100vh - 320px); min-height: 480px; }
 
+/* Nodes carry a soft drop shadow for depth; the whole layer is filtered once
+ * (cheaper than per-circle filters) and individual nodes lift on hover. */
+.graph-nodes { filter: drop-shadow(0 1px 2px rgba(11, 27, 61, 0.22)); }
+
 .graph-node {
   fill: var(--text-faint);
   stroke: var(--surface);
-  stroke-width: 2;
+  stroke-width: 2.5;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, stroke-width 0.15s ease;
 }
 .graph-node[data-stance="Pro"]                  { fill: var(--stance-pro); }
 .graph-node[data-stance="Con"]                  { fill: var(--stance-con); }
 .graph-node[data-stance="Neutral/Background"]   { fill: var(--stance-neutral); }
+.graph-node:hover { stroke: var(--brass-soft); stroke-width: 3.5; }
 .graph-node[data-current="true"] {
   stroke: var(--brass);
-  stroke-width: 3;
+  stroke-width: 3.5;
   cursor: default;
+  filter: drop-shadow(0 0 5px rgba(176, 141, 87, 0.55));
 }
 
 .graph-edge {
-  stroke-width: 1.6;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.62;
+  transition: opacity 0.15s ease, stroke-width 0.15s ease;
 }
 .graph-edge[data-rel="Rebuts"]        { stroke: #C62828; }
 .graph-edge[data-rel="Counters"]      { stroke: #B5701F; }
 .graph-edge[data-rel="Evidence For"]  { stroke: #2E7D32; }
 .graph-edge[data-rel="Updates"]       { stroke: #5A6472; }
+.graph-edge[data-rel="Related"]       { stroke: #6A4C93; }
 
 .graph-label {
   font-size: 11px;
-  fill: var(--text-muted);
+  font-weight: 500;
+  fill: var(--ink-soft);
+  /* White halo so labels stay legible over edges and nodes. */
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
   pointer-events: none;
   user-select: none;
   transition: opacity 0.15s ease;
 }
 
 /* Hover focus mode: dim everything not connected to the hovered node. */
-.graph--focused .graph-node            { opacity: 0.15; }
-.graph--focused .graph-edge            { opacity: 0.08; }
-.graph--focused .graph-label           { opacity: 0.15; }
+.graph--focused .graph-node            { opacity: 0.12; }
+.graph--focused .graph-edge            { opacity: 0.06; }
+.graph--focused .graph-label           { opacity: 0.12; }
 .graph--focused .graph-node.is-focus,
-.graph--focused .graph-edge.is-focus,
 .graph--focused .graph-label.is-focus  { opacity: 1; }
+.graph--focused .graph-edge.is-focus   { opacity: 0.95; stroke-width: 2.2; }
 
 .graph-empty {
   text-align: center;
@@ -1054,4 +1226,111 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .graph-legend__edge[data-rel="Counters"]     { color: #B5701F; }
 .graph-legend__edge[data-rel="Evidence For"] { color: #2E7D32; }
 .graph-legend__edge[data-rel="Updates"]      { color: #5A6472; }
+.graph-legend__edge[data-rel="Related"]      { color: #6A4C93; }
 .graph-legend__sep { color: var(--border-strong); }
+
+/* ─ Associated-groups banner ─
+ * Thin strip below the masthead on the front page and dashboard. Each chip is
+ * a partner group's logo (optional) + name, made clickable when it has a link.
+ */
+.group-banner {
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(var(--surface), var(--surface-2));
+  box-shadow: var(--shadow-sm);
+}
+.group-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-2);
+}
+.group-banner__label {
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.group-banner__list {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+}
+.group-banner__track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+/* Marquee mode: only enabled by banner.js when the chips overflow. The track is
+ * cloned so a one-set translate loops seamlessly; edges fade the chips out. */
+.group-banner__list.is-marquee {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.group-banner__list.is-marquee .group-banner__track {
+  width: max-content;
+  animation: group-marquee linear infinite;
+}
+.group-banner__list.is-marquee:hover .group-banner__track,
+.group-banner__list.is-marquee:focus-within .group-banner__track {
+  animation-play-state: paused;
+}
+@keyframes group-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-1 * var(--marquee-shift, 50%))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-banner__list.is-marquee { overflow-x: auto; }
+  .group-banner__list.is-marquee .group-banner__track { animation: none; }
+}
+.group-banner__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+a.group-banner__item:hover {
+  background: var(--parchment-deep);
+  color: var(--brass-deep);
+  text-decoration: none;
+}
+.group-banner__item--static { color: var(--text-muted); cursor: default; }
+.group-banner__logo {
+  height: 20px;
+  width: auto;
+  max-width: 64px;
+  object-fit: contain;
+  display: block;
+}
+.group-banner__name { white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .group-banner__label { display: none; }
+}
+
+/* ─ Admin: group logo + edit affordances ─ */
+.group-name-cell { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.group-logo-thumb {
+  height: 26px;
+  width: auto;
+  max-width: 72px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 2px;
+}
+.group-edit-fields { display: grid; gap: var(--sp-2); }
+.group-edit-logo { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.group-edit-logo .input[type="file"] { flex: 1 1 160px; }

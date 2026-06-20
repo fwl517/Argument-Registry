@@ -188,7 +188,7 @@ async function collectBackupData() {
   const [groups, users, sources, keywords, entries, ek, ar] = await Promise.all([
     db.query(
       `SELECT id, name, colour, text_colour, is_home, is_archived,
-              member_quota, created_at
+              member_quota, link, logo_path, created_at
          FROM groups ORDER BY created_at`
     ),
     db.query(
@@ -310,6 +310,18 @@ async function streamZip(res, scope, data) {
     if (seen.has(basename)) continue;
     seen.add(basename);
 
+    const filePath = path.join(config.fileStorePath, basename);
+    if (fs.existsSync(filePath)) {
+      archive.file(filePath, { name: `files/${basename}` });
+    }
+  }
+
+  // Group logos (backup scope only — group rows aren't part of portable exports).
+  for (const g of (scope === 'backup' && data.groups) || []) {
+    if (!g.logo_path) continue;
+    const basename = path.basename(g.logo_path);
+    if (seen.has(basename)) continue;
+    seen.add(basename);
     const filePath = path.join(config.fileStorePath, basename);
     if (fs.existsSync(filePath)) {
       archive.file(filePath, { name: `files/${basename}` });

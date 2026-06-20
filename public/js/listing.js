@@ -16,6 +16,7 @@ import { $, el, clear } from './utils.js';
 import { bootstrap } from './auth.js';
 import { initSearch } from './search.js';
 import { renderEntries, renderLoading, renderError } from './entries.js';
+import { mountGroupBanner } from './banner.js';
 
 async function populateSourceFilter() {
   const select = $('#filter-source');
@@ -54,6 +55,8 @@ async function init() {
   const requireAuth = document.body.dataset.requireAuth === 'true';
   const session = await bootstrap(requireAuth ? { require: 'auth' } : {});
   if (requireAuth && (!session || session.force_reset)) return;
+
+  mountGroupBanner();
 
   const form = $('#filter-form');
   const listEl = $('#entry-results');

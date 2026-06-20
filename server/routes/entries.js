@@ -28,7 +28,10 @@ const SRC_TYPES = [
   'News',
   'Original Society Material',
 ];
-const RELATIONS = ['Counters', 'Rebuts', 'Evidence For', 'Updates'];
+const RELATIONS = ['Counters', 'Rebuts', 'Evidence For', 'Updates', 'Related'];
+// Symmetric relations read the same in both directions, so a single stored row
+// covers both entries and a reverse A→B / B→A pair would be a duplicate.
+const SYMMETRIC_RELATIONS = new Set(['Related']);
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -136,19 +139,24 @@ const EMPTY_RELATIONS = () => ({
   evidenced_by: [],
   updates: [],
   updated_by: [],
+  related: [],
 });
 
+// 'Related' is symmetric, so it maps to the same key whether the current entry
+// is the source (forward) or the target (reverse) of the stored row.
 const FORWARD_KEY = {
   Counters: 'counters',
   Rebuts: 'rebuts',
   'Evidence For': 'evidence_for',
   Updates: 'updates',
+  Related: 'related',
 };
 const REVERSE_KEY = {
   Counters: 'countered_by',
   Rebuts: 'rebutted_by',
   'Evidence For': 'evidenced_by',
   Updates: 'updated_by',
+  Related: 'related',
 };
 
 /**
@@ -650,6 +658,20 @@ router.post(
     const target = await fetchEntryRow(db, targetId);
     if (!target) {
       return res.status(422).json({ error: 'VALIDATION', fields: { target_id: 'Unknown entry.' } });
+    }
+
+    // Symmetric relations are stored as a single row. The directional UNIQUE
+    // constraint only catches an identical-direction duplicate, so guard the
+    // reverse (target → source) direction here.
+    if (SYMMETRIC_RELATIONS.has(relationType)) {
+      const { rowCount } = await db.query(
+        `SELECT 1 FROM argument_relations
+          WHERE source_id = $1 AND target_id = $2 AND relation_type = $3`,
+        [targetId, source.id, relationType]
+      );
+      if (rowCount > 0) {
+        return res.status(422).json({ error: 'DUPLICATE_RELATION' });
+      }
     }
 
     let row;

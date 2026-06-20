@@ -46,7 +46,7 @@
 
       <form id="entry-form" class="panel panel--pad-lg" autocomplete="off">
         <div class="field field--full">
-          <label for="f-title">Title</label>
+          <label for="f-title">Title <span class="help-tip" tabindex="0" data-tip="A short, searchable headline that captures the source or argument at a glance." aria-label="A short, searchable headline that captures the source or argument at a glance.">?</span></label>
           <input class="input" type="text" id="f-title" name="title" maxlength="300"
                  placeholder="A concise, searchable headline" />
           <div class="field-error"></div>
@@ -54,37 +54,37 @@
 
         <div class="form-grid">
           <div class="field">
-            <label for="f-topic">Topic</label>
+            <label for="f-topic">Topic <span class="help-tip" tabindex="0" data-tip="The broad subject area this belongs to, used for grouping and filtering (e.g. Housing policy)." aria-label="The broad subject area this belongs to, used for grouping and filtering.">?</span></label>
             <input class="input" type="text" id="f-topic" name="topic" maxlength="200"
                    placeholder="e.g. Housing policy" />
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="f-date">Date published</label>
+            <label for="f-date">Date published <span class="help-tip" tabindex="0" data-tip="The date the original source was published — not the date you add it here. Optional." aria-label="The date the original source was published, not the date you add it here. Optional.">?</span></label>
             <input class="input" type="date" id="f-date" name="date_published" />
             <div class="hint">Optional — when the source was published.</div>
             <div class="field-error"></div>
           </div>
 
           <div class="field">
-            <label for="f-stance">Stance</label>
+            <label for="f-stance">Stance <span class="help-tip" tabindex="0" data-tip="Where this entry sits on the issue: in favour (Pro), against (Con), or neutral background." aria-label="Where this entry sits on the issue: in favour, against, or neutral background.">?</span></label>
             <select class="select" id="f-stance" name="stance"></select>
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="f-argtype">Argument type</label>
+            <label for="f-argtype">Argument type <span class="help-tip" tabindex="0" data-tip="What kind of material this is — a study, article, raw statistic, policy paper, or other." aria-label="What kind of material this is: a study, article, raw statistic, policy paper, or other.">?</span></label>
             <select class="select" id="f-argtype" name="argument_type"></select>
             <div class="field-error"></div>
           </div>
 
           <div class="field">
-            <label for="f-srctype">Source category</label>
+            <label for="f-srctype">Source category <span class="help-tip" tabindex="0" data-tip="The nature of the document: your party's platform, an opponent's, academic, news, or society-made." aria-label="The nature of the document: your party's platform, an opponent's, academic, news, or society-made.">?</span></label>
             <select class="select" id="f-srctype" name="source_type"></select>
             <div class="hint">What kind of document this is.</div>
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="f-source">Party / source</label>
+            <label for="f-source">Party / source <span class="help-tip" tabindex="0" data-tip="The organisation or party that produced this material. Add a new one if it isn't listed." aria-label="The organisation or party that produced this material. Add a new one if it isn't listed.">?</span></label>
             <div class="source-select-wrap">
               <select class="select" id="f-source" name="source_id"></select>
               <div class="row row--wrap">
@@ -101,12 +101,12 @@
           <h4>Add a new party / source</h4>
           <div class="form-grid">
             <div class="field">
-              <label for="new-source-name">Name</label>
+              <label for="new-source-name">Name <span class="help-tip" tabindex="0" data-tip="The display name of the party or organisation that produced the source." aria-label="The display name of the party or organisation that produced the source.">?</span></label>
               <input class="input" type="text" id="new-source-name" maxlength="120"
                      placeholder="e.g. Restore Britain" />
             </div>
             <div class="field">
-              <label for="new-source-colour">Badge colour</label>
+              <label for="new-source-colour">Badge colour <span class="help-tip help-tip--below" tabindex="0" data-tip="The background colour of this source's badge wherever it appears on the site." aria-label="The background colour of this source's badge wherever it appears on the site.">?</span></label>
               <div class="colour-field">
                 <input type="color" id="new-source-colour" value="#6B7280" />
                 <span class="hint mb-0">Text colour is chosen automatically for contrast.</span>
@@ -120,35 +120,44 @@
         </div>
 
         <div class="field field--full mt-5">
-          <label for="f-gist">Summary / gist</label>
+          <label for="f-gist">Summary / gist <span class="help-tip" tabindex="0" data-tip="A few sentences summarising the argument or finding. Shown in search results and previews." aria-label="A few sentences summarising the argument or finding. Shown in search results and previews.">?</span></label>
           <textarea class="textarea" id="f-gist" name="gist"
                     placeholder="Summarise the argument or finding in a few sentences."></textarea>
           <div class="field-error"></div>
         </div>
 
-        <div class="field field--full">
-          <label for="f-link">External link</label>
-          <input class="input" type="url" id="f-link" name="link"
-                 placeholder="https://… (or attach a file below)" />
-          <div class="field-error"></div>
-        </div>
+        <fieldset class="input-group mt-5">
+          <legend class="input-group__legend">
+            Source document
+            <span class="input-group__req">provide at least one</span>
+          </legend>
+          <p class="input-group__hint">Link to the source, attach the file, or paste the text below —
+            you only need <strong>one</strong> of the three.</p>
+
+          <div class="field field--full">
+            <label for="f-link">External link <span class="help-tip" tabindex="0" data-tip="A web address where the original source can be read online." aria-label="A web address where the original source can be read online.">?</span></label>
+            <input class="input" type="url" id="f-link" name="link"
+                   placeholder="https://… (or attach a file below)" />
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field field--full">
+            <label for="f-file">Attach a file <span class="help-tip" tabindex="0" data-tip="Upload the source document itself — PDF, image, text, Markdown, or a common office file." aria-label="Upload the source document itself: PDF, image, text, Markdown, or a common office file.">?</span></label>
+            <input class="input" type="file" id="f-file" name="file"
+                   accept=".png,.jpg,.jpeg,.gif,.webp,.avif,.bmp,.tif,.tiff,.pdf,.txt,.md,.markdown,.rtf,.csv,.tsv,.json,.xml,.yaml,.yml,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp" />
+            <div class="hint">Images, PDF, text/Markdown and common document types, up to 50&nbsp;MB. <span id="file-info"></span></div>
+          </div>
+
+          <div class="field field--full">
+            <label for="f-note">…or write the information here <span class="help-tip" tabindex="0" data-tip="Paste or type the content directly. It is saved as a Markdown file when no link or file is given." aria-label="Paste or type the content directly. It is saved as a Markdown file when no link or file is given.">?</span></label>
+            <textarea class="textarea" id="f-note" name="note_text"
+                      placeholder="Type or paste text. If you don't attach a file or link, this is saved as a .md file."></textarea>
+            <div class="hint">Used only when no file is attached.</div>
+          </div>
+        </fieldset>
 
         <div class="field field--full">
-          <label for="f-file">Attach a file</label>
-          <input class="input" type="file" id="f-file" name="file"
-                 accept=".png,.jpg,.jpeg,.gif,.webp,.avif,.bmp,.tif,.tiff,.pdf,.txt,.md,.markdown,.rtf,.csv,.tsv,.json,.xml,.yaml,.yml,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp" />
-          <div class="hint">Images, PDF, text/Markdown and common document types, up to 50&nbsp;MB. <span id="file-info"></span></div>
-        </div>
-
-        <div class="field field--full">
-          <label for="f-note">…or write the information here</label>
-          <textarea class="textarea" id="f-note" name="note_text"
-                    placeholder="Type or paste text. If you don't attach a file or link, this is saved as a .md file."></textarea>
-          <div class="hint">Optional — used only when no file is attached.</div>
-        </div>
-
-        <div class="field field--full">
-          <label class="label">Keywords</label>
+          <label class="label">Keywords <span class="help-tip" tabindex="0" data-tip="Free-form tags that make this entry easier to find. Press Enter or comma after each." aria-label="Free-form tags that make this entry easier to find. Press Enter or comma after each.">?</span></label>
           <div class="pill-input" id="keyword-input">
             <input type="text" id="f-keyword-input" placeholder="Type a keyword, press Enter" />
           </div>
@@ -160,7 +169,7 @@
         <div class="checkrow">
           <input type="checkbox" id="f-private" name="is_private" />
           <div>
-            <label for="f-private">Members only</label>
+            <label for="f-private">Members only</label> <span class="help-tip" tabindex="0" data-tip="When ticked, only signed-in members can see this entry; it is hidden from the public registry." aria-label="When ticked, only signed-in members can see this entry; it is hidden from the public registry.">?</span>
             <div class="hint">Hide this entry from the public registry.</div>
           </div>
         </div>
@@ -168,7 +177,7 @@
         <div class="checkrow mt-4">
           <input type="checkbox" id="f-anon" name="anonymise_uploader" />
           <div>
-            <label for="f-anon">Attribute anonymously</label>
+            <label for="f-anon">Attribute anonymously</label> <span class="help-tip" tabindex="0" data-tip="Hides your name on this entry, showing &quot;Anonymous Member&quot; instead. Your group is still shown." aria-label="Hides your name on this entry, showing Anonymous Member instead. Your group is still shown.">?</span>
             <div class="hint" id="anon-hint">Show “Anonymous Member” instead of your name on this entry.</div>
           </div>
         </div>

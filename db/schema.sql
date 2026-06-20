@@ -63,13 +63,17 @@ CREATE TYPE t_source_type AS ENUM (
     'Original Society Material'
 );
 
--- Directional relation types between entries.
+-- Relation types between entries. Most are directional (A → B means
+-- "A [relation] B") and the inverse is derived at query time.
 -- 'Updates' captures the case where newer evidence supersedes an older argument.
+-- 'Related' is SYMMETRIC: it simply means the two entries have something to do
+-- with each other, so a single row reads the same in both directions.
 CREATE TYPE t_relation AS ENUM (
     'Counters',
     'Rebuts',
     'Evidence For',
-    'Updates'
+    'Updates',
+    'Related'
 );
 
 
@@ -97,6 +101,8 @@ CREATE TABLE groups (
     is_home         BOOLEAN      NOT NULL DEFAULT FALSE,
     is_archived     BOOLEAN      NOT NULL DEFAULT FALSE,
     member_quota    INTEGER,                            -- NULL = unlimited
+    link            VARCHAR(2048),                      -- the group's own website
+    logo_path       VARCHAR(512),                       -- bare filename in FILE_STORE_PATH
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_member_quota_positive
@@ -107,6 +113,8 @@ COMMENT ON TABLE  groups               IS 'Affiliations / partner societies that
 COMMENT ON COLUMN groups.is_home       IS 'TRUE for the singular host group — its Admins have cross-group reach.';
 COMMENT ON COLUMN groups.is_archived   IS 'TRUE freezes the group: no new users, no name/quota edits. Existing members can still sign in.';
 COMMENT ON COLUMN groups.member_quota  IS 'NULL = unlimited. Counts only is_active = TRUE rows.';
+COMMENT ON COLUMN groups.link          IS 'Optional public website for the group, shown in the associated-groups banner.';
+COMMENT ON COLUMN groups.logo_path     IS 'Bare filename of the uploaded logo in FILE_STORE_PATH. Served publicly via /api/groups/:id/logo.';
 
 CREATE INDEX idx_groups_home     ON groups(is_home);
 CREATE INDEX idx_groups_archived ON groups(is_archived);

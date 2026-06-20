@@ -27,6 +27,7 @@ const RELATION_LABELS = {
   evidenced_by: 'Evidenced By',
   updates: 'Updates',
   updated_by: 'Updated By',
+  related: 'Related to',
 };
 
 // Clash relations grouped into four colour-coded cards. A card shows only when
@@ -40,6 +41,7 @@ const CLASH_GROUPS = [
   { label: 'Counters', tone: 'orange', members: ['counters', 'countered_by'] },
   { label: 'Evidence', tone: 'green',  members: ['evidence_for', 'evidenced_by'] },
   { label: 'Updates',  tone: 'grey',   members: ['updates', 'updated_by'] },
+  { label: 'Related',  tone: 'purple', members: ['related'] },
 ];
 
 // File extensions the on-page previewer can render. Unknown types stay as a

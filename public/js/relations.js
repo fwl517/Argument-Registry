@@ -15,8 +15,18 @@ import { apiFetch, errorMessage } from './api.js';
 import { el, clear, toast, showFieldErrors } from './utils.js';
 import { hasPermission } from './auth.js';
 
-// Forward relation types as stored in the DB (t_relation).
-const RELATION_TYPES = ['Counters', 'Rebuts', 'Evidence For', 'Updates'];
+// Relation types as stored in the DB (t_relation). 'Related' is symmetric —
+// it reads the same from either entry, so it is stored as a single row.
+const RELATION_TYPES = ['Counters', 'Rebuts', 'Evidence For', 'Updates', 'Related'];
+
+// A small "?" help affordance matching the static forms (see .help-tip in
+// components.css). The explanation rides in data-tip and is also exposed to
+// assistive tech via aria-label.
+function helpTip(text) {
+  return el('span', {
+    class: 'help-tip', tabindex: '0', 'data-tip': text, 'aria-label': text, text: '?',
+  });
+}
 
 /**
  * Render the "add a link" editor into a container. No-op for sub-Write sessions.
@@ -34,7 +44,7 @@ export async function mountRelationEditor(container, entryId, session, onChange)
   const heading = el('h3', { text: 'Link another entry' });
   const help = el('p', {
     class: 'muted text-sm',
-    text: 'Record how this entry relates to another — counters, rebuts, evidences, or updates it.',
+    text: 'Record how this entry relates to another — counters, rebuts, evidences, updates, or is generally related to it.',
   });
 
   const typeSelect = el('select', { class: 'select', name: 'relation_type' });
@@ -138,16 +148,25 @@ export async function mountRelationEditor(container, entryId, session, onChange)
     heading,
     help,
     el('div', { class: 'field' }, [
-      el('label', { text: 'Related entry', for: 'rel-target' }),
+      el('label', { for: 'rel-target' }, [
+        'Related entry ',
+        helpTip('Search for the other entry you want to connect this one to.'),
+      ]),
       combo,
     ]),
     el('div', { class: 'row row--wrap' }, [
       el('div', { class: 'field', style: { marginBottom: '0', flex: '0 0 auto', minWidth: '160px' } }, [
-        el('label', { text: 'Relation' }),
+        el('label', {}, [
+          'Relation ',
+          helpTip('How this entry relates to the other — counters, rebuts, evidences, updates, or is generally related.'),
+        ]),
         typeSelect,
       ]),
       el('div', { class: 'field', style: { marginBottom: '0', flex: '1 1 240px' } }, [
-        el('label', { text: 'Context note' }),
+        el('label', {}, [
+          'Context note ',
+          helpTip('A short note explaining how or why the two entries are connected.'),
+        ]),
         noteInput,
       ]),
     ]),

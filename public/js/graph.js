@@ -46,7 +46,12 @@ const RELATION_COLOURS = {
   Counters: '#B5701F',
   'Evidence For': '#2E7D32',
   Updates: '#5A6472',
+  Related: '#6A4C93',
 };
+
+// Symmetric relations carry no direction, so their edges are drawn without an
+// arrowhead (see buildSvg).
+const SYMMETRIC_RELATIONS = new Set(['Related']);
 
 /**
  * Render a force-directed graph into `container`.
@@ -110,6 +115,13 @@ function buildState(data, currentId) {
   // Ring initial positions — gives the simulation a non-degenerate starting
   // configuration so repulsion has something to act on.
   const radius = Math.max(80, n * 6);
+  // Node degree drives a gentle size boost so well-connected entries read as
+  // more prominent — a cheap bit of visual hierarchy.
+  const degree = new Map();
+  for (const e of data.edges) {
+    degree.set(e.source, (degree.get(e.source) || 0) + 1);
+    degree.set(e.target, (degree.get(e.target) || 0) + 1);
+  }
   const nodes = data.nodes.map((node, i) => ({
     id: node.id,
     title: node.title,
@@ -120,7 +132,8 @@ function buildState(data, currentId) {
     vy: 0,
     pinned: false,
     // Stored so renderPositions can shorten lines to the circle edge.
-    radius: node.id === currentId ? NODE_R_CURRENT : NODE_R,
+    radius: (node.id === currentId ? NODE_R_CURRENT : NODE_R)
+      + Math.min(5, Math.sqrt(degree.get(node.id) || 0) * 1.4),
   }));
   const nodeIndex = new Map();
   nodes.forEach((node, i) => nodeIndex.set(node.id, i));
@@ -275,11 +288,11 @@ function buildSvg(container, state, { currentId }) {
     marker.setAttribute('viewBox', '0 0 10 10');
     marker.setAttribute('refX', '10');
     marker.setAttribute('refY', '5');
-    marker.setAttribute('markerWidth', '8');
-    marker.setAttribute('markerHeight', '8');
+    marker.setAttribute('markerWidth', '7');
+    marker.setAttribute('markerHeight', '7');
     marker.setAttribute('orient', 'auto');
     const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    path.setAttribute('d', 'M 0 1 L 10 5 L 0 9 z');
     path.setAttribute('fill', colour);
     marker.appendChild(path);
     defs.appendChild(marker);
@@ -303,7 +316,9 @@ function buildSvg(container, state, { currentId }) {
     path.setAttribute('data-edge-id', e.id);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', RELATION_COLOURS[e.relation_type] || '#888');
-    path.setAttribute('marker-end', `url(#arrow-${slug(e.relation_type)})`);
+    if (!SYMMETRIC_RELATIONS.has(e.relation_type)) {
+      path.setAttribute('marker-end', `url(#arrow-${slug(e.relation_type)})`);
+    }
     edgesG.appendChild(path);
     return path;
   });

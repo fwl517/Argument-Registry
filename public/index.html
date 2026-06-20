@@ -29,6 +29,9 @@
     </div>
   </header>
 
+  <!-- Thin associated-groups strip; populated by banner.js, hidden when empty. -->
+  <aside id="group-banner" class="group-banner" aria-label="Associated groups" hidden></aside>
+
   <main class="container page">
     <div class="page-head">
       <p class="eyebrow">Public record</p>
@@ -51,11 +54,11 @@
 
       <div class="filter-grid">
         <div class="field">
-          <label class="label" for="filter-topic">Topic</label>
+          <label class="label" for="filter-topic">Topic <span class="help-tip" tabindex="0" data-tip="Show only entries whose topic contains this text." aria-label="Show only entries whose topic contains this text.">?</span></label>
           <input class="input" type="text" id="filter-topic" name="topic" placeholder="Any topic" />
         </div>
         <div class="field">
-          <label class="label" for="filter-stance">Stance</label>
+          <label class="label" for="filter-stance">Stance <span class="help-tip" tabindex="0" data-tip="Filter by position on the issue: Pro, Con, or Neutral / Background." aria-label="Filter by position on the issue: Pro, Con, or Neutral / Background.">?</span></label>
           <select class="select" id="filter-stance" name="stance">
             <option value="">Any</option>
             <option value="Pro">Pro</option>
@@ -64,7 +67,7 @@
           </select>
         </div>
         <div class="field">
-          <label class="label" for="filter-argtype">Argument type</label>
+          <label class="label" for="filter-argtype">Argument type <span class="help-tip" tabindex="0" data-tip="Filter by the kind of material: study, article, raw statistic, policy paper, or other." aria-label="Filter by the kind of material: study, article, raw statistic, policy paper, or other.">?</span></label>
           <select class="select" id="filter-argtype" name="argument_type">
             <option value="">Any</option>
             <option value="Study">Study</option>
@@ -75,7 +78,7 @@
           </select>
         </div>
         <div class="field">
-          <label class="label" for="filter-srctype">Source category</label>
+          <label class="label" for="filter-srctype">Source category <span class="help-tip" tabindex="0" data-tip="Filter by document nature: your party's platform, an opponent's, academic, news, or society-made." aria-label="Filter by document nature: your party's platform, an opponent's, academic, news, or society-made.">?</span></label>
           <select class="select" id="filter-srctype" name="source_type">
             <option value="">Any</option>
             <option value="Our Party Platform">Our Party Platform</option>
@@ -86,27 +89,27 @@
           </select>
         </div>
         <div class="field">
-          <label class="label" for="filter-source">Party / source</label>
+          <label class="label" for="filter-source">Party / source <span class="help-tip" tabindex="0" data-tip="Show only entries produced by a particular party or organisation." aria-label="Show only entries produced by a particular party or organisation.">?</span></label>
           <select class="select" id="filter-source" name="source_id">
             <option value="">Any party</option>
           </select>
         </div>
         <div class="field">
-          <label class="label" for="filter-group">Contributing group</label>
+          <label class="label" for="filter-group">Contributing group <span class="help-tip" tabindex="0" data-tip="Show only entries contributed by members of a particular group or partner society." aria-label="Show only entries contributed by members of a particular group or partner society.">?</span></label>
           <select class="select" id="filter-group" name="group_id">
             <option value="">Any group</option>
           </select>
         </div>
         <div class="field">
-          <label class="label" for="filter-keyword">Keyword</label>
+          <label class="label" for="filter-keyword">Keyword <span class="help-tip" tabindex="0" data-tip="Show only entries tagged with this exact keyword." aria-label="Show only entries tagged with this exact keyword.">?</span></label>
           <input class="input" type="text" id="filter-keyword" name="keyword" placeholder="e.g. housing" />
         </div>
         <div class="field">
-          <label class="label" for="filter-from">Added from</label>
+          <label class="label" for="filter-from">Added from <span class="help-tip" tabindex="0" data-tip="Show only entries added to the registry on or after this date." aria-label="Show only entries added to the registry on or after this date.">?</span></label>
           <input class="input" type="date" id="filter-from" name="from" />
         </div>
         <div class="field">
-          <label class="label" for="filter-to">Added to</label>
+          <label class="label" for="filter-to">Added to <span class="help-tip" tabindex="0" data-tip="Show only entries added to the registry on or before this date." aria-label="Show only entries added to the registry on or before this date.">?</span></label>
           <input class="input" type="date" id="filter-to" name="to" />
         </div>
       </div>

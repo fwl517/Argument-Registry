@@ -47,24 +47,24 @@
       <form id="create-form" autocomplete="off">
         <div class="form-grid">
           <div class="field">
-            <label for="c-username">Username</label>
+            <label for="c-username">Username <span class="help-tip" tabindex="0" data-tip="The login name for the new member. They'll receive a one-time password to sign in with." aria-label="The login name for the new member. They'll receive a one-time password to sign in with.">?</span></label>
             <input class="input" type="text" id="c-username" name="username"
                    autocapitalize="none" spellcheck="false" maxlength="100"
                    placeholder="e.g. j.smith" />
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="c-perm">Permission</label>
+            <label for="c-perm">Permission <span class="help-tip" tabindex="0" data-tip="Access level: Read views only, Write adds entries, Admin manages members, Root controls everything." aria-label="Access level: Read views only, Write adds entries, Admin manages members, Root controls everything.">?</span></label>
             <select class="select" id="c-perm" name="permission"></select>
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="c-role">Society role</label>
+            <label for="c-role">Society role <span class="help-tip" tabindex="0" data-tip="The member's role within the society (e.g. President, Treasurer). Used for display only." aria-label="The member's role within the society, such as President or Treasurer. Used for display only.">?</span></label>
             <select class="select" id="c-role" name="society_role"></select>
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="c-group">Group</label>
+            <label for="c-group">Group <span class="help-tip" tabindex="0" data-tip="The affiliation or partner society this member belongs to." aria-label="The affiliation or partner society this member belongs to.">?</span></label>
             <select class="select" id="c-group" name="group_id"></select>
             <div class="field-error"></div>
           </div>
@@ -112,21 +112,33 @@
       <form id="group-create-form" autocomplete="off">
         <div class="form-grid">
           <div class="field">
-            <label for="g-name">Group name</label>
+            <label for="g-name">Group name <span class="help-tip" tabindex="0" data-tip="The display name of this affiliation or partner society." aria-label="The display name of this affiliation or partner society.">?</span></label>
             <input class="input" type="text" id="g-name" name="name"
                    maxlength="100" placeholder="e.g. Liberal Democrats Society" />
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="g-colour">Pill colour</label>
+            <label for="g-colour">Pill colour <span class="help-tip" tabindex="0" data-tip="The badge colour used for this group throughout the site." aria-label="The badge colour used for this group throughout the site.">?</span></label>
             <input class="colour-picker" type="color" id="g-colour" name="colour"
                    value="#6B7280" />
             <div class="field-error"></div>
           </div>
           <div class="field">
-            <label for="g-quota">Member quota</label>
+            <label for="g-quota">Member quota <span class="help-tip" tabindex="0" data-tip="Maximum number of active members allowed in this group. Leave blank for no limit." aria-label="Maximum number of active members allowed in this group. Leave blank for no limit.">?</span></label>
             <input class="input" type="number" id="g-quota" name="member_quota"
                    min="1" placeholder="Unlimited" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="g-link">Website <span class="help-tip" tabindex="0" data-tip="The group's own website. Used to make their logo and name clickable in the banner. Optional." aria-label="The group's own website. Used to make their logo and name clickable in the banner. Optional.">?</span></label>
+            <input class="input" type="url" id="g-link" name="link"
+                   placeholder="https://…" />
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="g-logo">Logo <span class="help-tip" tabindex="0" data-tip="An image shown beside the group's name in the associated-groups banner. PNG, JPG, GIF, WEBP, AVIF or BMP. Optional." aria-label="An image shown beside the group's name in the associated-groups banner. Optional.">?</span></label>
+            <input class="input" type="file" id="g-logo" name="logo"
+                   accept=".png,.jpg,.jpeg,.gif,.webp,.avif,.bmp" />
             <div class="field-error"></div>
           </div>
         </div>
@@ -175,11 +187,11 @@
       </div>
       <div class="form-grid">
         <div class="field">
-          <label for="crown-target">New Root</label>
+          <label for="crown-target">New Root <span class="help-tip" tabindex="0" data-tip="The member who will become the new Root. There can only ever be one Root at a time." aria-label="The member who will become the new Root. There can only ever be one Root at a time.">?</span></label>
           <select class="select" id="crown-target"></select>
         </div>
         <div class="field">
-          <label for="crown-confirm">Type TRANSFER to confirm</label>
+          <label for="crown-confirm">Type TRANSFER to confirm <span class="help-tip" tabindex="0" data-tip="Type TRANSFER in capitals to confirm handing over Root control. This cannot be undone." aria-label="Type TRANSFER in capitals to confirm handing over Root control. This cannot be undone.">?</span></label>
           <input class="input" type="text" id="crown-confirm" placeholder="TRANSFER"
                  autocapitalize="characters" spellcheck="false" />
         </div>

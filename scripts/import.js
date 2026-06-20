@@ -277,11 +277,25 @@ async function importBackup(data, files) {
 
     // ── Groups (must precede users for the FK) ──────────────────────────────
     for (const g of data.groups || []) {
+      // Restore the logo file (kept under its original basename so logo_path
+      // stays valid). Drop the reference if the file is missing from the zip.
+      let logoPath = g.logo_path || null;
+      if (logoPath) {
+        const basename = path.basename(logoPath);
+        const buf = files.get(basename);
+        if (buf) {
+          fs.writeFileSync(path.join(config.fileStorePath, basename), buf);
+          logoPath = basename;
+        } else {
+          console.warn(`Warning: backup is missing logo ${basename} for group "${g.name}".`);
+          logoPath = null;
+        }
+      }
       await client.query(
         `INSERT INTO groups
            (id, name, colour, text_colour, is_home, is_archived,
-            member_quota, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            member_quota, link, logo_path, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           g.id,
           g.name,
@@ -290,6 +304,8 @@ async function importBackup(data, files) {
           g.is_home,
           g.is_archived,
           g.member_quota,
+          g.link || null,
+          logoPath,
           g.created_at,
         ]
       );

@@ -59,7 +59,7 @@ const config = {
 
   upload: {
     maxBytes: 50 * 1024 * 1024, // 50 MB
-    allowedMime: ['application/pdf', 'text/plain', 'text/markdown', 'text/csv', 'tex/tab-separated-values', 'application/json', 'application/xml', 'text/yaml', 'application/x-yaml', 'image/jpg', 'image/gif', 'image/bmp', 'image/avif', 'image/webp', 'image/png'],
+    allowedMime: ['application/pdf', 'text/plain', 'text/markdown', 'text/csv', 'tex/tab-separated-values', 'application/json', 'application/xml', 'text/yaml', 'application/x-yaml', 'image/jpg', 'image/jpeg', 'image/gif', 'image/bmp', 'image/avif', 'image/webp', 'image/png'],
     allowedExt: ['.pdf', '.txt', '.md', '.csv', '.tsv', '.json', '.xml', '.yaml', '.png', '.jpg', '.gif', '.webp', '.bmp', '.avif'],
   },
 

@@ -11,7 +11,7 @@
 // and group-management panels. The API enforces every rule; the UI gating here
 // is a convenience.
 
-import { apiFetch, errorMessage } from './api.js';
+import { apiFetch, apiUpload, errorMessage } from './api.js';
 import {
   $, el, clear, esc, formatShortDate, toast, showFieldErrors, groupTag,
 } from './utils.js';
@@ -318,8 +318,19 @@ function setupBackupPanel() {
 function groupRow(g) {
   const tr = el('tr', { dataset: { id: g.id } });
 
-  // Name + colour pill
-  tr.appendChild(el('td', {}, [groupTag(g)]));
+  // Logo (if any) + name pill + website link.
+  const nameCellKids = [];
+  if (g.logo_url) {
+    nameCellKids.push(el('img', { class: 'group-logo-thumb', src: g.logo_url, alt: `${g.name} logo` }));
+  }
+  nameCellKids.push(groupTag(g));
+  if (g.link) {
+    nameCellKids.push(el('a', {
+      class: 'linkbtn text-sm', href: g.link, target: '_blank', rel: 'noopener noreferrer',
+      text: 'site ↗', title: g.link,
+    }));
+  }
+  tr.appendChild(el('td', {}, [el('div', { class: 'group-name-cell' }, nameCellKids)]));
 
   // Member count (computed from loaded users)
   const count = users.filter((u) => u.group?.id === g.id && u.is_active).length;
@@ -386,8 +397,41 @@ function renderGroupEditRow(tr, g) {
     class: 'colour-picker', type: 'color', value: g.colour,
     title: 'Pick the group pill colour',
   });
+
+  // Website link.
+  const linkInput = el('input', {
+    class: 'input', type: 'url', value: g.link || '', placeholder: 'https://… (website)',
+  });
+
+  // Logo: current thumbnail (if any) + replace picker + remove button.
+  let removeLogo = false;
+  const logoFileInput = el('input', {
+    class: 'input', type: 'file', accept: '.png,.jpg,.jpeg,.gif,.webp,.avif,.bmp',
+  });
+  const logoThumb = g.logo_url
+    ? el('img', { class: 'group-logo-thumb', src: g.logo_url, alt: `${g.name} logo` })
+    : null;
+  const removeBtn = g.logo_url
+    ? el('button', { class: 'linkbtn linkbtn--danger text-sm', type: 'button', text: 'Remove' })
+    : null;
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      removeLogo = true;
+      logoThumb?.remove();
+      removeBtn.remove();
+      logoFileInput.value = '';
+      toast('Logo will be removed when you save.', 'ok');
+    });
+  }
+  const logoRow = el('div', { class: 'group-edit-logo' },
+    [logoThumb, logoFileInput, removeBtn].filter(Boolean));
+
   const groupCell = el('td', {}, [
-    el('div', { class: 'group-edit-row' }, [nameInput, colourInput]),
+    el('div', { class: 'group-edit-fields' }, [
+      el('div', { class: 'group-edit-row' }, [nameInput, colourInput]),
+      linkInput,
+      logoRow,
+    ]),
   ]);
   tr.appendChild(groupCell);
 
@@ -426,17 +470,37 @@ function renderGroupEditRow(tr, g) {
         body.member_quota = newQuota;
       }
     }
-    if (Object.keys(body).length === 0) { renderGroupTable(); return; }
+    const newLink = linkInput.value.trim();
+    if (newLink !== (g.link || '')) body.link = newLink === '' ? null : newLink;
+
+    const newLogo = logoFileInput.files[0] || null;
+    const hasChanges = Object.keys(body).length > 0 || newLogo || removeLogo;
+    if (!hasChanges) { renderGroupTable(); return; }
+
     save.disabled = true;
     try {
-      await apiFetch(`/groups/${encodeURIComponent(g.id)}`, {
-        method: 'PATCH', body: JSON.stringify(body),
-      });
+      if (Object.keys(body).length > 0) {
+        await apiFetch(`/groups/${encodeURIComponent(g.id)}`, {
+          method: 'PATCH', body: JSON.stringify(body),
+        });
+      }
+      // A newly chosen logo wins over a pending removal.
+      if (newLogo) {
+        const fd = new FormData();
+        fd.append('logo', newLogo);
+        await apiUpload(`/groups/${encodeURIComponent(g.id)}/logo`, fd);
+      } else if (removeLogo) {
+        await apiFetch(`/groups/${encodeURIComponent(g.id)}/logo`, { method: 'DELETE' });
+      }
       toast('Group updated.', 'ok');
       await loadGroups();
       renderGroupTable();
     } catch (err) {
-      toast(errorMessage(err, 'Could not update the group.'), 'error');
+      if (err.fields?.link) {
+        toast('The website must be a full http(s) address.', 'error');
+      } else {
+        toast(errorMessage(err, 'Could not update the group.'), 'error');
+      }
       save.disabled = false;
     }
   });
@@ -491,17 +555,30 @@ function setupGroupsPanel() {
     const name = form.name.value.trim();
     const colour = form.colour.value.trim();
     const quota = form.member_quota.value.trim();
+    const link = form.link.value.trim();
+    const logoFile = form.logo.files[0] || null;
     const btn = $('#g-create-btn');
     btn.disabled = true; btn.textContent = 'Creating…';
     try {
-      await apiFetch('/groups', {
+      const created = await apiFetch('/groups', {
         method: 'POST',
         body: JSON.stringify({
           name,
           colour: colour || undefined,
           member_quota: quota || undefined,
+          link: link || undefined,
         }),
       });
+      // Logo rides in a second multipart request once the group id exists.
+      if (logoFile && created?.id) {
+        try {
+          const fd = new FormData();
+          fd.append('logo', logoFile);
+          await apiUpload(`/groups/${encodeURIComponent(created.id)}/logo`, fd);
+        } catch (logoErr) {
+          toast(errorMessage(logoErr, 'Group created, but the logo upload failed.'), 'error');
+        }
+      }
       toast('Group created.', 'ok');
       form.reset();
       await loadGroups();
