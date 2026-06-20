@@ -46,8 +46,8 @@ async function main() {
 
   try {
     await db.query(
-      `INSERT INTO users (username, password_hash, permission, society_role, is_active, force_reset)
-       VALUES ($1, $2, 'Root', 'President', TRUE, TRUE)`,
+      `INSERT INTO users (username, password_hash, permission, society_role, group_id, is_active, force_reset)
+       VALUES ($1, $2, 'Root', 'President', (SELECT id FROM groups WHERE is_home = TRUE), TRUE, TRUE)`,
       [username, passwordHash]
     );
   } catch (err) {

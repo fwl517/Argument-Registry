@@ -237,7 +237,9 @@ Get-Content $EnvFile | ForEach-Object {
 
 & node "$ProjectDir\scripts\seed-root.js"
 if ($LASTEXITCODE -ne 0) {
-    Write-Warn '(seed-root reported that a Root account already exists -- leaving it alone.)'
+    Write-Warn "seed-root did not create an account (exit code $LASTEXITCODE)."
+    Write-Warn 'If the message above says a Root already exists, that is fine -- it was left alone.'
+    Write-Warn 'Any OTHER error above means the Root was NOT created; fix it and re-run `node scripts\seed-root.js`.'
 }
 
 # ---- done -----------------------------------------------------------------

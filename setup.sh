@@ -238,7 +238,10 @@ set -a; . "$ENV_FILE"; set +a
 if node "$PROJECT_DIR/scripts/seed-root.js"; then
   :  # success — the script printed the temporary password.
 else
-  yellow "(seed-root reported that a Root account already exists — leaving it alone.)"
+  rc=$?
+  yellow "seed-root did not create an account (exit code $rc)."
+  yellow "If the message above says a Root already exists, that is fine — it was left alone."
+  yellow "Any OTHER error above means the Root was NOT created; fix it and re-run \`node scripts/seed-root.js\`."
 fi
 
 # ---- done -----------------------------------------------------------------
