@@ -171,7 +171,7 @@ GRANT ALL PRIVILEGES ON DATABASE "${DB_NAME}" TO "${DB_USER}";
 EOF
   )
 
-  SCHEMA_GRANT="GRANT ALL ON SCHEMA public TO \"${DB_USER}\";"
+  SCHEMA_GRANT="GRANT ALL ON SCHEMA public TO \"${DB_USER}\"; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
 
   # Try peer auth first (works out of the box on Debian/Ubuntu apt installs).
   CREATED=0
