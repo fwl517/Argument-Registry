@@ -20,13 +20,14 @@ import { bootstrap } from './auth.js';
 
 // Enum value lists (mirror the DB enum types exactly).
 const STANCES = ['Pro', 'Con', 'Neutral/Background'];
-const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Other'];
+const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Argument', 'Other'];
 const SRC_TYPES = [
   'Our Party Platform',
   'Opposition Platform',
   'Academic',
   'News',
   'Original Society Material',
+  'Other',
 ];
 
 /* — Note-to-file + client-side type guard ——————————————————— */

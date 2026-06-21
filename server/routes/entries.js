@@ -20,13 +20,14 @@ const router = express.Router();
 
 // ── Enumerations (mirrors the DB enum types) ─────────────────────────────────
 const STANCES = ['Pro', 'Con', 'Neutral/Background'];
-const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Other'];
+const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Argument', 'Other'];
 const SRC_TYPES = [
   'Our Party Platform',
   'Opposition Platform',
   'Academic',
   'News',
   'Original Society Material',
+  'Other',
 ];
 const RELATIONS = ['Counters', 'Rebuts', 'Evidence For', 'Updates', 'Related'];
 // Symmetric relations read the same in both directions, so a single stored row

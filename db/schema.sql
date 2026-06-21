@@ -49,6 +49,7 @@ CREATE TYPE t_argument_type AS ENUM (
     'Article',
     'Raw Statistic',
     'Policy Paper',
+    'Argument',
     'Other'
 );
 
@@ -60,7 +61,8 @@ CREATE TYPE t_source_type AS ENUM (
     'Opposition Platform',
     'Academic',
     'News',
-    'Original Society Material'
+    'Original Society Material',
+    'Other'
 );
 
 -- Relation types between entries. Most are directional (A → B means
