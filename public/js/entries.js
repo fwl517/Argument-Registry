@@ -14,6 +14,7 @@ import {
   el, clear, esc, formatShortDate,
   sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, groupTag,
 } from './utils.js';
+import { renderMarkdown } from './markdown.js';
 
 function formatUploader(uploader) {
   if (!uploader || !uploader.name) return 'Unknown';
@@ -54,7 +55,12 @@ function entryCard(entry) {
   card.appendChild(el('h3', { class: 'entry-card__title', text: entry.title }));
 
   if (entry.gist) {
-    card.appendChild(el('p', { class: 'entry-card__gist', text: entry.gist }));
+    // Render Markdown, but with links disabled — the whole card is already an
+    // <a>, so nested anchors would be invalid. Safe: renderMarkdown escapes HTML.
+    card.appendChild(el('div', {
+      class: 'entry-card__gist',
+      html: renderMarkdown(entry.gist, { links: false }),
+    }));
   }
 
   // Keywords (cap at 6 to keep cards tidy).

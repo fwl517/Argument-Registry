@@ -217,6 +217,23 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Rendered Markdown inside the clamped card preview: collapse block margins so
+   multi-element gists stay compact and the 3-line clamp holds. */
+.entry-card__gist > :first-child { margin-top: 0; }
+.entry-card__gist > :last-child { margin-bottom: 0; }
+.entry-card__gist p,
+.entry-card__gist ul,
+.entry-card__gist ol,
+.entry-card__gist blockquote,
+.entry-card__gist pre { margin: 0; }
+.entry-card__gist ul,
+.entry-card__gist ol { padding-left: 1.1em; }
+.entry-card__gist h1,
+.entry-card__gist h2,
+.entry-card__gist h3,
+.entry-card__gist h4,
+.entry-card__gist h5,
+.entry-card__gist h6 { font-size: 1em; margin: 0; }
 .entry-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -912,17 +929,22 @@ table.data tbody tr:hover { background: var(--surface-2); }
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface); padding: var(--sp-4) var(--sp-5);
 }
-.file-preview__doc > :first-child { margin-top: 0; }
-.file-preview__doc > :last-child { margin-bottom: 0; }
+/* Shared Markdown block styling — used by the attached-file preview and the
+   entry-detail gist (both render through markdown.js). */
+.file-preview__doc > :first-child, .gist-block > :first-child { margin-top: 0; }
+.file-preview__doc > :last-child, .gist-block > :last-child { margin-bottom: 0; }
 .file-preview__doc h1, .file-preview__doc h2, .file-preview__doc h3,
-.file-preview__doc h4, .file-preview__doc h5, .file-preview__doc h6 { margin: var(--sp-4) 0 var(--sp-2); }
-.file-preview__doc p { margin: 0 0 var(--sp-3); }
-.file-preview__doc ul, .file-preview__doc ol { margin: 0 0 var(--sp-3); padding-left: 1.4em; }
-.file-preview__doc code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px; }
-.file-preview__doc pre.md-code { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); overflow: auto; }
-.file-preview__doc pre.md-code code { background: none; padding: 0; }
-.file-preview__doc blockquote { margin: var(--sp-3) 0; padding-left: var(--sp-4); border-left: 3px solid var(--brass-soft); color: var(--text-muted); }
-.file-preview__doc a { color: var(--ink-soft); text-decoration: underline; }
+.file-preview__doc h4, .file-preview__doc h5, .file-preview__doc h6,
+.gist-block h1, .gist-block h2, .gist-block h3,
+.gist-block h4, .gist-block h5, .gist-block h6 { margin: var(--sp-4) 0 var(--sp-2); }
+.file-preview__doc p, .gist-block p { margin: 0 0 var(--sp-3); }
+.file-preview__doc ul, .file-preview__doc ol,
+.gist-block ul, .gist-block ol { margin: 0 0 var(--sp-3); padding-left: 1.4em; }
+.file-preview__doc code, .gist-block code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px; }
+.file-preview__doc pre.md-code, .gist-block pre.md-code { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); overflow: auto; }
+.file-preview__doc pre.md-code code, .gist-block pre.md-code code { background: none; padding: 0; }
+.file-preview__doc blockquote, .gist-block blockquote { margin: var(--sp-3) 0; padding-left: var(--sp-4); border-left: 3px solid var(--brass-soft); color: var(--text-muted); }
+.file-preview__doc a, .gist-block a { color: var(--ink-soft); text-decoration: underline; }
 
 /* ─ Entry: clash map as colour-coded, collapsible cards ─
    (.clash-map is already a stacking grid in base components.css — no wrapper class needed.) */

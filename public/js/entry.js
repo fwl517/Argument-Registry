@@ -17,6 +17,7 @@ import {
 import { bootstrap, hasPermission } from './auth.js';
 import { mountRelationEditor, removeRelation } from './relations.js';
 import { renderGraph } from './graph.js';
+import { renderMarkdown } from './markdown.js';
 
 const RELATION_LABELS = {
   counters: 'Counters',
@@ -81,57 +82,6 @@ function previewKind(ext) {
   return null;
 }
 
-/* — Tiny, safe Markdown renderer. All HTML is escaped before any formatting is
-     applied, so an uploaded note can never inject markup. Deliberately a small
-     subset (headings, bold/italic, code, links, lists, quotes, rules). — */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function safeHref(url) {
-  const u = String(url).trim();
-  if (/^(https?:|mailto:)/i.test(u)) return u; // external / mail
-  if (/^[/#]/.test(u)) return u;               // relative / anchor
-  return '';                                   // block javascript:, data:, etc.
-}
-function mdInline(t) {
-  let s = escapeHtml(t);
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
-  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, txt, url) => {
-    const href = safeHref(url);
-    return href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${txt}</a>` : txt;
-  });
-  return s;
-}
-function renderMarkdown(src) {
-  const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
-  const out = [];
-  let inCode = false, codeBuf = [], list = null, para = [];
-  const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
-  const flushPara = () => { if (para.length) { out.push(`<p>${mdInline(para.join(' '))}</p>`); para = []; } };
-  for (const line of lines) {
-    if (/^```/.test(line)) {
-      if (inCode) { out.push(`<pre class="md-code"><code>${escapeHtml(codeBuf.join('\n'))}</code></pre>`); codeBuf = []; inCode = false; }
-      else { flushPara(); closeList(); inCode = true; }
-      continue;
-    }
-    if (inCode) { codeBuf.push(line); continue; }
-    if (/^\s*$/.test(line)) { flushPara(); closeList(); continue; }
-    const h = line.match(/^(#{1,6})\s+(.*)$/);
-    if (h) { flushPara(); closeList(); out.push(`<h${h[1].length}>${mdInline(h[2])}</h${h[1].length}>`); continue; }
-    if (/^\s*>\s?/.test(line)) { flushPara(); closeList(); out.push(`<blockquote>${mdInline(line.replace(/^\s*>\s?/, ''))}</blockquote>`); continue; }
-    if (/^\s*[-*+]\s+/.test(line)) { flushPara(); if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; } out.push(`<li>${mdInline(line.replace(/^\s*[-*+]\s+/, ''))}</li>`); continue; }
-    if (/^\s*\d+\.\s+/.test(line)) { flushPara(); if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; } out.push(`<li>${mdInline(line.replace(/^\s*\d+\.\s+/, ''))}</li>`); continue; }
-    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { flushPara(); closeList(); out.push('<hr>'); continue; }
-    para.push(line.trim());
-  }
-  if (inCode) out.push(`<pre class="md-code"><code>${escapeHtml(codeBuf.join('\n'))}</code></pre>`);
-  flushPara(); closeList();
-  return out.join('\n');
-}
 
 async function renderInlinePreview(localPath, label) {
   const wrap = $('#detail-preview');
@@ -290,10 +240,14 @@ function renderEntry(entry) {
   $('#detail-topic').textContent = entry.topic || '';
   $('#detail-title').textContent = entry.title;
 
-  // — Gist —
+  // — Gist (rendered as Markdown) —
   const gistEl = $('#detail-gist');
   clear(gistEl);
-  gistEl.appendChild(el('p', { class: 'mb-0', text: entry.gist || 'No summary provided.' }));
+  if (entry.gist) {
+    gistEl.innerHTML = renderMarkdown(entry.gist); // safe: renderMarkdown escapes all HTML first
+  } else {
+    gistEl.appendChild(el('p', { class: 'mb-0', text: 'No summary provided.' }));
+  }
 
   // — Source / link / file actions —
   const actions = $('#detail-actions');
