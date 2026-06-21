@@ -1044,7 +1044,9 @@ table.data tbody tr:hover { background: var(--surface-2); }
 /* ─ Listing: results grid (.entry-list is already grid; add columns) ─ */
 #entry-results .entry-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* Wider minimum → ~3 roomy, near-square columns at full width, collapsing to
+     2 then 1 as the viewport narrows (vs. 4 tall, skinny columns before). */
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--sp-5);
 }
 /* base .entry-card is display:block — make it a column so cards in a row share
