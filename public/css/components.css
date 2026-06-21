@@ -210,6 +210,7 @@
   margin-bottom: var(--sp-3);
 }
 .entry-card__gist {
+  font-family: var(--font-display);
   color: var(--text);
   margin: var(--sp-2) 0 var(--sp-3);
   display: -webkit-box;
@@ -657,6 +658,7 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .meta-list dd:last-child { margin-bottom: 0; }
 
 .gist-block {
+  font-family: var(--font-display);
   font-size: 1.05rem;
   line-height: 1.7;
   color: var(--text);
@@ -925,6 +927,7 @@ table.data tbody tr:hover { background: var(--surface-2); }
   white-space: pre-wrap; word-break: break-word;
 }
 .file-preview__doc {
+  font-family: var(--font-display);
   max-height: 70vh; overflow: auto;
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface); padding: var(--sp-4) var(--sp-5);
