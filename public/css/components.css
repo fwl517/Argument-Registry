@@ -1036,22 +1036,10 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .clash-group__body .badge--stance { display: none; } /* still hidden to reduce clutter; remove this line to show them */
 
 /* ─ Listing: two-column shell (filter rail left, results right) ─ */
-.listing-layout {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: var(--sp-6);
-  align-items: start;
-}
-
-/* The rail IS the existing .searchbar — it already stacks its children with their
-   own margins, so we ONLY pin it and force the inner grid to a single column.
-   (No flex/gap here, or it would double the children's existing spacing.) */
-.listing-layout .filter-rail {
-  position: sticky;
-  top: var(--sp-5);
-  margin-bottom: 0;
-}
-.listing-layout .filter-rail .filter-grid { grid-template-columns: 1fr; }
+/* Filter bar sits full-width on top; results take the full width below it. The
+   filter's own .filter-grid auto-fits across the width, and .searchbar already
+   carries the bottom margin that separates it from the results. */
+.listing-layout { display: block; }
 
 /* ─ Listing: results grid (.entry-list is already grid; add columns) ─ */
 #entry-results .entry-list {
@@ -1063,15 +1051,6 @@ table.data tbody tr:hover { background: var(--surface-2); }
    height and the footer meta sits flush at the bottom. */
 #entry-results .entry-card { display: flex; flex-direction: column; }
 #entry-results .entry-card__meta { margin-top: auto; padding-top: var(--sp-4); }
-
-/* ─ Listing: collapse to a single column on narrow screens ─ */
-@media (max-width: 860px) {
-  .listing-layout { grid-template-columns: 1fr; gap: var(--sp-5); }
-  .listing-layout .filter-rail { position: static; }
-  .listing-layout .filter-rail .filter-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-}
 
 /* ─ Searchable entry picker (relation editor) ─ */
 .combobox { position: relative; }
