@@ -28,6 +28,18 @@ function helpTip(text) {
   });
 }
 
+// A small badge explaining why a suggestion surfaced (see GET /:id/related).
+function reasonChip(reason, matchedKeywords) {
+  if (reason === 'keyword') {
+    const tags = (matchedKeywords || []).slice(0, 3).map((t) => `#${t}`).join(' ');
+    return el('span', { class: 'badge badge--keyword', text: tags || 'Shared keyword' });
+  }
+  return el('span', {
+    class: 'badge badge--meta',
+    text: reason === 'topic' ? 'Same topic' : 'Clash cluster',
+  });
+}
+
 /**
  * Render the "add a link" editor into a container. No-op for sub-Write sessions.
  *
@@ -176,6 +188,48 @@ export async function mountRelationEditor(container, entryId, session, onChange)
 
   container.appendChild(form);
 
+  // — Suggested entries to link (discovery aid; titles are easy to forget) —
+  // Lists the union of same-topic, shared-keyword, and same-clash-cluster
+  // entries. Clicking one fills the picker above so it can be linked.
+  const suggestWrap = el('div', { class: 'relation-suggest' });
+  container.appendChild(suggestWrap);
+
+  const loadSuggestions = async () => {
+    let data;
+    try {
+      data = await apiFetch(`/entries/${encodeURIComponent(entryId)}/related`);
+    } catch (_e) {
+      return; // optional aid — fail quietly
+    }
+    const items = data?.suggestions || [];
+    clear(suggestWrap);
+    if (!items.length) return;
+    suggestWrap.appendChild(el('h3', { text: 'Related entries you might link' }));
+    suggestWrap.appendChild(el('p', {
+      class: 'muted text-sm',
+      text: 'Entries sharing this one’s topic or keywords, or sitting in the same clash-map cluster. Click one to fill the picker above.',
+    }));
+    const listEl = el('div', { class: 'suggest-list' });
+    items.forEach((s) => {
+      const item = el('button', {
+        class: 'suggest-item', type: 'button',
+        onClick: () => {
+          choose({ id: s.id, title: s.title });
+          combo.scrollIntoView({ block: 'nearest' });
+          typeSelect.focus();
+        },
+      }, [
+        el('span', { class: 'suggest-main' }, [
+          el('span', { class: 'suggest-title', text: s.title }),
+          s.topic ? el('span', { class: 'suggest-topic', text: s.topic }) : null,
+        ].filter(Boolean)),
+        el('span', { class: 'suggest-reasons' }, s.reasons.map((r) => reasonChip(r, s.matched_keywords))),
+      ]);
+      listEl.appendChild(item);
+    });
+    suggestWrap.appendChild(listEl);
+  };
+
   // Populate the searchable list (authenticated view includes private entries).
   try {
     const data = await apiFetch('/entries?per_page=100');
@@ -194,6 +248,8 @@ export async function mountRelationEditor(container, entryId, session, onChange)
     searchInput.placeholder = 'Could not load entries';
     searchInput.disabled = true;
   }
+
+  loadSuggestions();
 
   submit.addEventListener('click', async () => {
     errSlot.textContent = '';

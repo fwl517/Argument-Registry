@@ -332,6 +332,113 @@ router.get(
 );
 
 // =============================================================================
+// GET /api/entries/:id/related  — suggestion list for the relation editor.
+// =============================================================================
+//
+// Surfaces other entries worth linking to, as the UNION of three signals:
+//   (a) topic   — same exact topic as this entry
+//   (b) keyword — shares at least one keyword (the matched tags are reported)
+//   (c) cluster — sits in the same clash-map component (undirected reachability
+//                 via argument_relations, not necessarily a direct link)
+// Each suggestion lists the reason(s) it appeared so the UI can label it.
+// Write-gated: this is an authoring aid for the link editor, and Write+ viewers
+// see every entry, so no public/private visibility filtering is needed.
+const MAX_SUGGESTIONS = 60;
+const MAX_CLUSTER = 200; // cap BFS so a giant component can't blow up the payload
+
+router.get(
+  '/:id/related',
+  requirePermission('Write'),
+  asyncHandler(async (req, res) => {
+    const entry = await fetchEntryRow(db, req.params.id);
+    if (!entry) throw new HttpError(404, 'NOT_FOUND');
+    const selfId = entry.id;
+
+    // id -> { reasons:Set, matched_keywords:Set }
+    const hits = new Map();
+    const note = (id, reason, tag) => {
+      if (id === selfId) return;
+      let h = hits.get(id);
+      if (!h) { h = { reasons: new Set(), matched_keywords: new Set() }; hits.set(id, h); }
+      h.reasons.add(reason);
+      if (tag) h.matched_keywords.add(tag);
+    };
+
+    // (a) Same topic.
+    if (typeof entry.topic === 'string' && entry.topic.trim() !== '') {
+      const { rows } = await db.query(
+        'SELECT id FROM entries WHERE topic = $1 AND id <> $2',
+        [entry.topic, selfId]
+      );
+      for (const r of rows) note(r.id, 'topic');
+    }
+
+    // (b) Shared keyword(s), tracking which tags matched.
+    {
+      const { rows } = await db.query(
+        `SELECT ek2.entry_id AS id, k.tag
+           FROM entry_keywords ek1
+           JOIN entry_keywords ek2
+             ON ek2.keyword_id = ek1.keyword_id AND ek2.entry_id <> ek1.entry_id
+           JOIN keywords k ON k.id = ek1.keyword_id
+          WHERE ek1.entry_id = $1`,
+        [selfId]
+      );
+      for (const r of rows) note(r.id, 'keyword', r.tag);
+    }
+
+    // (c) Same clash-map cluster (undirected BFS over all relations, capped).
+    {
+      const { rows: edges } = await db.query('SELECT source_id, target_id FROM argument_relations');
+      const adj = new Map();
+      const link = (a, b) => { if (!adj.has(a)) adj.set(a, new Set()); adj.get(a).add(b); };
+      for (const e of edges) { link(e.source_id, e.target_id); link(e.target_id, e.source_id); }
+      const seen = new Set([selfId]);
+      const queue = [selfId];
+      while (queue.length > 0 && seen.size <= MAX_CLUSTER) {
+        const v = queue.shift();
+        for (const n of adj.get(v) || []) {
+          if (seen.has(n)) continue;
+          seen.add(n);
+          queue.push(n);
+          note(n, 'cluster');
+        }
+      }
+    }
+
+    if (hits.size === 0) return res.json({ suggestions: [], total: 0 });
+
+    // Hydrate display fields for the union.
+    const { rows } = await db.query(
+      'SELECT id, title, topic, stance FROM entries WHERE id = ANY($1::uuid[])',
+      [Array.from(hits.keys())]
+    );
+    const RANK = { topic: 0, keyword: 1, cluster: 2 };
+    const suggestions = rows.map((r) => {
+      const h = hits.get(r.id);
+      return {
+        id: r.id,
+        title: r.title,
+        topic: r.topic,
+        stance: r.stance,
+        reasons: Array.from(h.reasons).sort((a, b) => RANK[a] - RANK[b]),
+        matched_keywords: Array.from(h.matched_keywords).sort(),
+      };
+    });
+    // Strongest signals first: more reasons, then topic/keyword over cluster-only.
+    suggestions.sort((a, b) => {
+      if (b.reasons.length !== a.reasons.length) return b.reasons.length - a.reasons.length;
+      const ra = Math.min(...a.reasons.map((x) => RANK[x]));
+      const rb = Math.min(...b.reasons.map((x) => RANK[x]));
+      if (ra !== rb) return ra - rb;
+      return a.title.localeCompare(b.title);
+    });
+
+    res.json({ suggestions: suggestions.slice(0, MAX_SUGGESTIONS), total: suggestions.length });
+  })
+);
+
+// =============================================================================
 // POST /api/entries  — create (multipart/form-data)
 // =============================================================================
 router.post(
