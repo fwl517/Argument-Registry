@@ -76,11 +76,23 @@ export function formatShortDate(value) {
 
 /* — Badge builders ———————————————————————————————————————— */
 
+/**
+ * Wrap a DB-driven badge colour so its fill is slightly translucent — the pill
+ * reads as a tint over the card surface rather than a solid block. Falls back to
+ * the raw colour if color-mix is unsupported (the browser drops the value).
+ */
+function softFill(colour) {
+  if (!colour) return colour;
+  return `color-mix(in srgb, ${colour} 82%, transparent)`;
+}
+
 /** Source (party) badge — colour comes from the DB-driven source object. */
 export function sourceTag(source) {
   if (!source) return null;
   const span = el('span', { class: 'badge badge--source', text: source.name });
-  span.style.backgroundColor = source.colour;
+  // Soften the fill slightly so the pill reads as a tint, not a solid swatch;
+  // the text colour stays fully opaque for legibility.
+  span.style.backgroundColor = softFill(source.colour);
   span.style.color = source.text_colour;
   return span;
 }
@@ -113,7 +125,7 @@ export function privateBadge() {
 export function groupTag(group) {
   if (!group || !group.name) return null;
   const span = el('span', { class: 'badge badge--group', text: group.name });
-  if (group.colour) span.style.backgroundColor = group.colour;
+  if (group.colour) span.style.backgroundColor = softFill(group.colour);
   if (group.text_colour) span.style.color = group.text_colour;
   return span;
 }

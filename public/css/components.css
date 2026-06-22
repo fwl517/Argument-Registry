@@ -198,8 +198,8 @@
    badge palette) so restricted material is identifiable at a glance without an
    extra loud badge. The stance left-rail still shows through (higher specificity). */
 .entry-card--private {
-  background-color: #FBF3E1;
-  border-color: #E7D4AE;
+  background-color: color-mix(in srgb, #E2B566 13%, var(--surface));
+  border-color: color-mix(in srgb, #C8A86A 50%, var(--border));
 }
 
 .entry-card__title {
@@ -321,13 +321,15 @@
 .badge--source { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
 
 .badge--stance { border-radius: var(--radius); }
-.badge--stance[data-stance="Pro"]        { color: var(--stance-pro);     background: var(--stance-pro-bg); }
-.badge--stance[data-stance="Con"]        { color: var(--stance-con);     background: var(--stance-con-bg); }
-.badge--stance[data-stance="Neutral/Background"] { color: var(--stance-neutral); background: var(--stance-neutral-bg); }
+/* Backgrounds are mixed with transparent so the pills sit softly over whatever
+   surface they land on (white cards, the warm members-only surface, etc.). */
+.badge--stance[data-stance="Pro"]        { color: var(--stance-pro);     background: color-mix(in srgb, var(--stance-pro-bg) 62%, transparent); }
+.badge--stance[data-stance="Con"]        { color: var(--stance-con);     background: color-mix(in srgb, var(--stance-con-bg) 62%, transparent); }
+.badge--stance[data-stance="Neutral/Background"] { color: var(--stance-neutral); background: color-mix(in srgb, var(--stance-neutral-bg) 62%, transparent); }
 
 .badge--meta {
   color: var(--text-muted);
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   border-color: var(--border);
   text-transform: none;
   font-weight: 600;
@@ -335,12 +337,12 @@
 }
 .badge--private {
   color: #7A4B12;
-  background: #F6ECD9;
-  border-color: #E4CFA6;
+  background: color-mix(in srgb, #F6ECD9 60%, transparent);
+  border-color: color-mix(in srgb, #E4CFA6 70%, transparent);
 }
 .badge--keyword {
   color: var(--ink-soft);
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   border-color: var(--border);
   text-transform: none;
   letter-spacing: 0;
@@ -351,7 +353,7 @@
    carry a name). */
 .badge--group {
   color: var(--ink-soft);
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
   border-color: var(--border);
   text-transform: none;
   letter-spacing: 0.01em;
