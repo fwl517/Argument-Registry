@@ -316,9 +316,8 @@
   letter-spacing: 0.05em;
   font-size: 0.66rem;
 }
-/* Source badges get colour from inline styles (DB-driven). A subtle ring keeps
-   pale party colours legible on the parchment ground. */
-.badge--source { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+/* Source badges get colour from inline styles (DB-driven), softened to a tint in
+   utils.js — no outline ring, so they sit flat like the stance badges. */
 
 .badge--stance { border-radius: var(--radius); }
 /* Backgrounds are mixed with transparent so the pills sit softly over whatever

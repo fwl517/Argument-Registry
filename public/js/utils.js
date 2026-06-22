@@ -81,18 +81,18 @@ export function formatShortDate(value) {
  * reads as a tint over the card surface rather than a solid block. Falls back to
  * the raw colour if color-mix is unsupported (the browser drops the value).
  */
-function softFill(colour) {
+function softFill(colour, amount = 82) {
   if (!colour) return colour;
-  return `color-mix(in srgb, ${colour} 82%, transparent)`;
+  return `color-mix(in srgb, ${colour} ${amount}%, transparent)`;
 }
 
 /** Source (party) badge — colour comes from the DB-driven source object. */
 export function sourceTag(source) {
   if (!source) return null;
   const span = el('span', { class: 'badge badge--source', text: source.name });
-  // Soften the fill slightly so the pill reads as a tint, not a solid swatch;
-  // the text colour stays fully opaque for legibility.
-  span.style.backgroundColor = softFill(source.colour);
+  // Soften the fill to a tint (matching the stance badges) so the pill reads as
+  // a wash, not a solid swatch; the text colour stays fully opaque for legibility.
+  span.style.backgroundColor = softFill(source.colour, 62);
   span.style.color = source.text_colour;
   return span;
 }
