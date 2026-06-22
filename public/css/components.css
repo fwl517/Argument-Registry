@@ -357,7 +357,6 @@
   text-transform: none;
   letter-spacing: 0.01em;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .keyword-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); }

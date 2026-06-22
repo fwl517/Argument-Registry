@@ -86,14 +86,17 @@ function softFill(colour, amount = 82) {
   return `color-mix(in srgb, ${colour} ${amount}%, transparent)`;
 }
 
-/** Source (party) badge — colour comes from the DB-driven source object. */
+/**
+ * Source (party) badge — colour comes from the DB-driven source object. Rendered
+ * as a tinted chip: a soft translucent fill, with the outline AND text in the
+ * party colour at full opacity so it stays crisp and legible against the tint.
+ */
 export function sourceTag(source) {
   if (!source) return null;
   const span = el('span', { class: 'badge badge--source', text: source.name });
-  // Soften the fill to a tint (matching the stance badges) so the pill reads as
-  // a wash, not a solid swatch; the text colour stays fully opaque for legibility.
   span.style.backgroundColor = softFill(source.colour, 62);
-  span.style.color = source.text_colour;
+  span.style.borderColor = source.colour;
+  span.style.color = source.colour;
   return span;
 }
 
@@ -118,15 +121,20 @@ export function privateBadge() {
 }
 
 /**
- * Group affiliation badge. Mirrors sourceTag (DB-driven colour); if the group
- * has no colour (foreign-imported entries that only carry the name), falls
- * back to the default `.badge--group` styling defined in CSS.
+ * Group affiliation badge (the uploader's group pill). Mirrors sourceTag exactly
+ * — tinted fill with a full-opacity outline and text in the group colour — so
+ * the uploader pill reads as a sibling of the party-source pill. With no DB
+ * colour (foreign-imported entries that only carry the name), falls back to the
+ * default `.badge--group` styling defined in CSS.
  */
 export function groupTag(group) {
   if (!group || !group.name) return null;
   const span = el('span', { class: 'badge badge--group', text: group.name });
-  if (group.colour) span.style.backgroundColor = softFill(group.colour);
-  if (group.text_colour) span.style.color = group.text_colour;
+  if (group.colour) {
+    span.style.backgroundColor = softFill(group.colour, 62);
+    span.style.borderColor = group.colour;
+    span.style.color = group.colour;
+  }
   return span;
 }
 
