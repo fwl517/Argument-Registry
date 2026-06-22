@@ -94,7 +94,7 @@ function softFill(colour, amount = 82) {
 export function sourceTag(source) {
   if (!source) return null;
   const span = el('span', { class: 'badge badge--source', text: source.name });
-  span.style.backgroundColor = softFill(source.colour, 62);
+  span.style.backgroundColor = softFill(source.colour, 80);
   span.style.borderColor = source.colour;
   span.style.color = source.text_colour;
   return span;
@@ -131,7 +131,7 @@ export function groupTag(group) {
   if (!group || !group.name) return null;
   const span = el('span', { class: 'badge badge--group', text: group.name });
   if (group.colour) {
-    span.style.backgroundColor = softFill(group.colour, 62);
+    span.style.backgroundColor = softFill(group.colour, 80);
     span.style.borderColor = group.colour;
     if (group.text_colour) span.style.color = group.text_colour;
   }
