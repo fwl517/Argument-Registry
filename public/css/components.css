@@ -194,6 +194,14 @@
 .entry-card[data-stance="Con"]        { border-left-color: var(--stance-con); }
 .entry-card[data-stance="Neutral/Background"] { border-left-color: var(--stance-neutral); }
 
+/* Members-only entries get a warm cream surface (echoing the "members only"
+   badge palette) so restricted material is identifiable at a glance without an
+   extra loud badge. The stance left-rail still shows through (higher specificity). */
+.entry-card--private {
+  background-color: #FBF3E1;
+  border-color: #E7D4AE;
+}
+
 .entry-card__title {
   font-family: var(--font-display);
   font-size: 1.22rem;
@@ -203,18 +211,19 @@
   line-height: 1.25;
 }
 .entry-card__topic {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: var(--sp-3);
+  margin-bottom: 0;
 }
 .entry-card__gist {
   font-family: var(--font-display);
+  font-size: 0.95rem;
   color: var(--text);
   margin: var(--sp-2) 0 var(--sp-4);
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -241,40 +250,43 @@
   align-items: center;
   gap: var(--sp-2);
   margin-top: var(--sp-3);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   color: var(--text-faint);
 }
 .entry-card__uploader { color: var(--text-muted); font-weight: 600; }
-.entry-card__badges {
+/* Header row: topic eyebrow + inline badges, sharing one line above the title.
+   Right padding keeps it clear of the absolutely-positioned corner icon. */
+.entry-card__head {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
-  /* Leave room for the absolutely-positioned argument-type icon top-right. */
-  padding-right: 34px;
+  margin-bottom: var(--sp-3);
+  padding-right: 48px;
+  min-height: 22px;
 }
 
-/* Argument-type glyph, pinned to the card's top-right corner. */
+/* Argument-type glyph, pinned to the card's top-right corner. The glyph stroke
+   colour is set inline per type (icons.js); the chip's faint fill and border are
+   derived from that colour here via currentColor, so each type reads as a soft,
+   low-saturation tint rather than a loud swatch. */
 .entry-card__type-icon {
   position: absolute;
   top: var(--sp-4);
   right: var(--sp-4);
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text-faint);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, currentColor 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, currentColor 34%, var(--border));
   border-radius: 50%;
-  transition: color 0.16s ease, border-color 0.16s ease;
+  transition: transform 0.16s ease;
 }
-.entry-card__type-icon svg { width: 17px; height: 17px; }
-.entry-card:hover .entry-card__type-icon {
-  color: var(--brass-deep);
-  border-color: var(--brass-soft);
-}
+.entry-card__type-icon svg { width: 24px; height: 24px; }
+.entry-card:hover .entry-card__type-icon { transform: scale(1.06); }
 
 .meta-dot { color: var(--border-strong); }
 
@@ -288,8 +300,9 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: none;
-  padding: 0.3em 0.66em;
-  border-radius: 999px;
+  padding: 0.34em 0.6em;
+  /* Squared chip corners to match the stance badge — keeps all pills cohesive. */
+  border-radius: var(--radius);
   line-height: 1;
   white-space: nowrap;
   border: 1px solid transparent;
@@ -1112,7 +1125,12 @@ table.data tbody tr:hover { background: var(--surface-2); }
 }
 /* base .entry-card is display:block — make it a column so cards in a row share
    height and the footer meta sits flush at the bottom. */
-#entry-results .entry-card { display: flex; flex-direction: column; }
+/* Tighter bottom padding drops the footer closer to the card's lower edge. */
+#entry-results .entry-card {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--sp-3);
+}
 /* Push the uploader/date meta to the very bottom, set off by a hairline, so the
    summary above it owns the visual focus. */
 #entry-results .entry-card__meta {

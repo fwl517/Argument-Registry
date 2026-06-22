@@ -12,7 +12,7 @@
 
 import {
   el, clear, esc, formatShortDate,
-  sourceTag, stanceTag, keywordTag, privateBadge, groupTag,
+  sourceTag, keywordTag, privateBadge, groupTag,
 } from './utils.js';
 import { renderMarkdown } from './markdown.js';
 import { argumentTypeIcon } from './icons.js';
@@ -34,29 +34,30 @@ function formatUploader(uploader) {
 
 function entryCard(entry) {
   const card = el('a', {
-    class: 'entry-card',
+    class: entry.is_private ? 'entry-card entry-card--private' : 'entry-card',
     href: `/entry.html?id=${encodeURIComponent(entry.id)}`,
     dataset: { stance: entry.stance || '' },
   });
 
-  // Argument-type glyph, pinned to the top-right corner.
+  // Argument-type glyph, pinned to the top-right corner (colour = type).
   const typeIcon = argumentTypeIcon(entry.argument_type);
   if (typeIcon) card.appendChild(typeIcon);
 
-  // Badges row: stance, party source, private flag. The source *category*
-  // (source_type) is intentionally omitted here to keep cards uncluttered — it
-  // is surfaced by the corner icon (argument type) and the full entry page.
-  const badges = el('div', { class: 'entry-card__badges' });
-  const stance = stanceTag(entry.stance);
-  if (stance) badges.appendChild(stance);
-  const src = sourceTag(entry.source);
-  if (src) badges.appendChild(src);
-  if (entry.is_private) badges.appendChild(privateBadge());
-  card.appendChild(badges);
-
+  // Header: topic eyebrow + inline badges (party source, members-only). No
+  // stance badge — the coloured left rail already carries it. The source
+  // *category* (source_type) is intentionally omitted to keep cards uncluttered;
+  // it lives on the full entry page and is hinted by the corner argument-type icon.
+  const head = el('div', { class: 'entry-card__head' });
   if (entry.topic) {
-    card.appendChild(el('div', { class: 'entry-card__topic', text: entry.topic }));
+    head.appendChild(el('span', { class: 'entry-card__topic', text: entry.topic }));
   }
+  const src = sourceTag(entry.source);
+  if (src) head.appendChild(src);
+  if (entry.is_private) head.appendChild(privateBadge());
+  // Always present (even when empty) so it reserves the corner icon's vertical
+  // space and the title can never slide underneath it.
+  card.appendChild(head);
+
   card.appendChild(el('h3', { class: 'entry-card__title', text: entry.title }));
 
   if (entry.gist) {
