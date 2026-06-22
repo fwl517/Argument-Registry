@@ -88,15 +88,15 @@ function softFill(colour, amount = 82) {
 
 /**
  * Source (party) badge — colour comes from the DB-driven source object. Rendered
- * as a tinted chip: a soft translucent fill, with the outline AND text in the
- * party colour at full opacity so it stays crisp and legible against the tint.
+ * as a tinted chip: a soft translucent fill with a thin full-opacity outline in
+ * the party colour. Text keeps its DB-chosen colour (white/black) at full opacity.
  */
 export function sourceTag(source) {
   if (!source) return null;
   const span = el('span', { class: 'badge badge--source', text: source.name });
   span.style.backgroundColor = softFill(source.colour, 62);
   span.style.borderColor = source.colour;
-  span.style.color = source.colour;
+  span.style.color = source.text_colour;
   return span;
 }
 
@@ -133,7 +133,7 @@ export function groupTag(group) {
   if (group.colour) {
     span.style.backgroundColor = softFill(group.colour, 62);
     span.style.borderColor = group.colour;
-    span.style.color = group.colour;
+    if (group.text_colour) span.style.color = group.text_colour;
   }
   return span;
 }
