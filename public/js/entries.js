@@ -12,9 +12,10 @@
 
 import {
   el, clear, esc, formatShortDate,
-  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, groupTag,
+  sourceTag, stanceTag, keywordTag, privateBadge, groupTag,
 } from './utils.js';
 import { renderMarkdown } from './markdown.js';
+import { argumentTypeIcon } from './icons.js';
 
 function formatUploader(uploader) {
   if (!uploader || !uploader.name) return 'Unknown';
@@ -38,12 +39,16 @@ function entryCard(entry) {
     dataset: { stance: entry.stance || '' },
   });
 
-  // Badges row: stance, source category, party source, private flag.
+  // Argument-type glyph, pinned to the top-right corner.
+  const typeIcon = argumentTypeIcon(entry.argument_type);
+  if (typeIcon) card.appendChild(typeIcon);
+
+  // Badges row: stance, party source, private flag. The source *category*
+  // (source_type) is intentionally omitted here to keep cards uncluttered — it
+  // is surfaced by the corner icon (argument type) and the full entry page.
   const badges = el('div', { class: 'entry-card__badges' });
   const stance = stanceTag(entry.stance);
   if (stance) badges.appendChild(stance);
-  const cat = metaBadge(entry.source_type);
-  if (cat) badges.appendChild(cat);
   const src = sourceTag(entry.source);
   if (src) badges.appendChild(src);
   if (entry.is_private) badges.appendChild(privateBadge());
@@ -63,14 +68,18 @@ function entryCard(entry) {
     }));
   }
 
-  // Keywords (cap at 6 to keep cards tidy).
+  // Keywords — confined to a single line. The tags clip to the card width with a
+  // soft right fade; the overflow count is pinned outside the clip so it always
+  // shows. Cap the rendered tags at 6 anyway to bound DOM on heavily-tagged rows.
   if (Array.isArray(entry.keywords) && entry.keywords.length) {
-    const kw = el('div', { class: 'keyword-row' });
-    entry.keywords.slice(0, 6).forEach((t) => kw.appendChild(keywordTag(t)));
+    const row = el('div', { class: 'keyword-row keyword-row--card' });
+    const tags = el('div', { class: 'keyword-row__tags' });
+    entry.keywords.slice(0, 6).forEach((t) => tags.appendChild(keywordTag(t)));
+    row.appendChild(tags);
     if (entry.keywords.length > 6) {
-      kw.appendChild(el('span', { class: 'faint text-sm', text: `+${entry.keywords.length - 6}` }));
+      row.appendChild(el('span', { class: 'keyword-row__more', text: `+${entry.keywords.length - 6}` }));
     }
-    card.appendChild(kw);
+    card.appendChild(row);
   }
 
   // Footer meta: uploader + group pill + dates + attachment hint.

@@ -212,9 +212,9 @@
 .entry-card__gist {
   font-family: var(--font-display);
   color: var(--text);
-  margin: var(--sp-2) 0 var(--sp-3);
+  margin: var(--sp-2) 0 var(--sp-4);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -241,14 +241,39 @@
   align-items: center;
   gap: var(--sp-2);
   margin-top: var(--sp-3);
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  font-size: 0.74rem;
+  color: var(--text-faint);
 }
+.entry-card__uploader { color: var(--text-muted); font-weight: 600; }
 .entry-card__badges {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
   margin-bottom: var(--sp-2);
+  /* Leave room for the absolutely-positioned argument-type icon top-right. */
+  padding-right: 34px;
+}
+
+/* Argument-type glyph, pinned to the card's top-right corner. */
+.entry-card__type-icon {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+.entry-card__type-icon svg { width: 17px; height: 17px; }
+.entry-card:hover .entry-card__type-icon {
+  color: var(--brass-deep);
+  border-color: var(--brass-soft);
 }
 
 .meta-dot { color: var(--border-strong); }
@@ -257,17 +282,26 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: 0.4em;
   font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.32em 0.7em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  padding: 0.3em 0.66em;
   border-radius: 999px;
   line-height: 1;
   white-space: nowrap;
   border: 1px solid transparent;
+}
+/* Stance keeps a quiet uppercase treatment — it is the one badge whose label is
+   a fixed taxonomy term (Pro / Con / Neutral), so caps read as a label, not a
+   shout. Everything else (party, group, keyword) stays sentence-case. */
+.badge--stance,
+.badge--private {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.66rem;
 }
 /* Source badges get colour from inline styles (DB-driven). A subtle ring keeps
    pale party colours legible on the parchment ground. */
@@ -313,6 +347,30 @@
 }
 
 .keyword-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* Card variant: keywords are pinned to a single line. The tag strip clips with a
+   soft right fade so a long tag list reads as "and more" without wrapping; the
+   overflow count sits outside the clip so it is never cut off. */
+.keyword-row--card { flex-wrap: nowrap; align-items: center; min-width: 0; }
+.keyword-row__tags {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: nowrap;
+  overflow: hidden;
+  /* Fill the row so the fade falls on empty space when tags fit, and only bites
+     into a tag when the strip genuinely overflows. */
+  flex: 1 1 auto;
+  min-width: 0;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+.keyword-row--card .badge--keyword { flex: 0 0 auto; }
+.keyword-row__more {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-faint);
+}
 
 /* — Forms ————————————————————————————————————————————————— */
 .field { margin-bottom: var(--sp-5); }
@@ -1055,7 +1113,13 @@ table.data tbody tr:hover { background: var(--surface-2); }
 /* base .entry-card is display:block — make it a column so cards in a row share
    height and the footer meta sits flush at the bottom. */
 #entry-results .entry-card { display: flex; flex-direction: column; }
-#entry-results .entry-card__meta { margin-top: auto; padding-top: var(--sp-4); }
+/* Push the uploader/date meta to the very bottom, set off by a hairline, so the
+   summary above it owns the visual focus. */
+#entry-results .entry-card__meta {
+  margin-top: auto;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
 
 /* ─ Searchable entry picker (relation editor) ─ */
 .combobox { position: relative; }
