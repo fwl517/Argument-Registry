@@ -56,7 +56,10 @@
           <div class="field">
             <label for="f-topic">Topic <span class="help-tip" tabindex="0" data-tip="The broad subject area this belongs to, used for grouping and filtering (e.g. Housing policy)." aria-label="The broad subject area this belongs to, used for grouping and filtering.">?</span></label>
             <input class="input" type="text" id="f-topic" name="topic" maxlength="200"
-                   placeholder="e.g. Housing policy" />
+                   placeholder="e.g. Housing policy" list="topic-list"
+                   autocomplete="off" />
+            <datalist id="topic-list"></datalist>
+            <div class="hint">Start typing to reuse an existing topic.</div>
             <div class="field-error"></div>
           </div>
           <div class="field">
@@ -159,9 +162,11 @@
         <div class="field field--full">
           <label class="label">Keywords <span class="help-tip" tabindex="0" data-tip="Free-form tags that make this entry easier to find. Press Enter or comma after each." aria-label="Free-form tags that make this entry easier to find. Press Enter or comma after each.">?</span></label>
           <div class="pill-input" id="keyword-input">
-            <input type="text" id="f-keyword-input" placeholder="Type a keyword, press Enter" />
+            <input type="text" id="f-keyword-input" placeholder="Type a keyword, press Enter"
+                   list="keyword-list" autocomplete="off" />
           </div>
-          <div class="hint">Press Enter or comma to add each tag.</div>
+          <datalist id="keyword-list"></datalist>
+          <div class="hint">Press Enter or comma to add each tag. Existing keywords are suggested as you type.</div>
         </div>
 
         <hr />

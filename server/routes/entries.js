@@ -316,6 +316,23 @@ router.get(
 );
 
 // =============================================================================
+// GET /api/entries/topics  — distinct topics, for the upload-form suggestions.
+// Registered before '/:id' so the literal path is not parsed as an entry id.
+// Applies the same public/member visibility boundary as the listing.
+// =============================================================================
+router.get(
+  '/topics',
+  asyncHandler(async (req, res) => {
+    const where = ["topic IS NOT NULL", "topic <> ''"];
+    if (!req.user) where.push('is_private = FALSE');
+    const { rows } = await db.query(
+      `SELECT DISTINCT topic FROM entries WHERE ${where.join(' AND ')} ORDER BY topic ASC`
+    );
+    res.json(rows.map((r) => r.topic));
+  })
+);
+
+// =============================================================================
 // GET /api/entries/:id  — single entry + clash map
 // =============================================================================
 router.get(

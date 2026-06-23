@@ -63,6 +63,39 @@ let entryId = null;
 let existingLocalPath = null; // current attached file in edit mode
 let anonTouched = false; // whether the user changed the anonymise box (edit mode)
 const keywords = new Set();
+let allKeywords = []; // [{ tag, alias_of, canonical_tag }] for the keyword datalist
+
+/* — Existing-value suggestions (topic + keyword datalists) ———————— */
+function refreshKeywordSuggestions() {
+  const list = $('#keyword-list');
+  if (!list) return;
+  clear(list);
+  for (const k of allKeywords) {
+    if (keywords.has(k.tag)) continue; // don't suggest tags already added
+    const opt = el('option', { value: k.tag });
+    // Surface that an alias will fold into its canonical group.
+    if (k.alias_of != null && k.canonical_tag) opt.label = `${k.tag} → ${k.canonical_tag}`;
+    list.appendChild(opt);
+  }
+}
+
+async function loadSuggestions() {
+  try {
+    const [topics, kws] = await Promise.all([
+      apiFetch('/entries/topics', { noRedirect: true }).catch(() => []),
+      apiFetch('/keywords', { noRedirect: true }).catch(() => []),
+    ]);
+    const topicList = $('#topic-list');
+    if (topicList && Array.isArray(topics)) {
+      clear(topicList);
+      topics.forEach((t) => topicList.appendChild(el('option', { value: t })));
+    }
+    allKeywords = Array.isArray(kws) ? kws : [];
+    refreshKeywordSuggestions();
+  } catch (_e) {
+    /* suggestions are a convenience — never block the form on a fetch failure */
+  }
+}
 
 /* — Select population ————————————————————————————————————— */
 function fillSelect(select, values, { placeholder } = {}) {
@@ -114,6 +147,8 @@ function renderPills(container) {
     ]);
     container.insertBefore(pill, input);
   }
+  // Keep suggestions in sync — drop tags that are already added.
+  refreshKeywordSuggestions();
 }
 
 function normaliseTag(raw) {
@@ -368,6 +403,7 @@ async function init() {
 
   // Keyword pills + source preview + add-source.
   setupKeywordInput($('#keyword-input'));
+  loadSuggestions();
   sourceSelect.addEventListener('change', () => updateSourcePreview(sourceSelect, sourcePreview));
   form.anonymise_uploader.addEventListener('change', () => { anonTouched = true; });
 
