@@ -441,11 +441,48 @@ CREATE INDEX idx_entries_created   ON entries(created_at);
 -- ================================================================
 
 CREATE TABLE keywords (
-    id  SERIAL         PRIMARY KEY,
-    tag VARCHAR(100)   NOT NULL UNIQUE
+    id       SERIAL       PRIMARY KEY,
+    tag      VARCHAR(100) NOT NULL UNIQUE,
+    -- Synonym grouping: an alias points at a canonical keyword. NULL = canonical.
+    -- The "concept" of any row is COALESCE(alias_of, id); two tags are synonyms
+    -- iff they share a concept. Entries keep their literal tag for display.
+    alias_of INTEGER      REFERENCES keywords(id) ON DELETE SET NULL,
+    CONSTRAINT chk_alias_not_self CHECK (alias_of IS NULL OR alias_of <> id)
 );
 
 COMMENT ON COLUMN keywords.tag IS 'Normalised lowercase, no # prefix. e.g. "carbon-tax".';
+COMMENT ON COLUMN keywords.alias_of IS 'Canonical keyword id this tag is a synonym of; NULL when this row is itself canonical.';
+
+CREATE INDEX idx_keywords_alias_of ON keywords(alias_of);
+
+-- Keep alias chains exactly one level deep and acyclic:
+--   * an alias may only point at a canonical keyword (alias_of IS NULL), and
+--   * a keyword that already has aliases pointing at it cannot become an alias.
+-- Merging two groups is done in app code by repointing the loser's members onto
+-- the winner's canonical id, so a single level always suffices.
+CREATE OR REPLACE FUNCTION fn_check_keyword_alias()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+    v_target_alias INTEGER;
+    v_has_aliases  BOOLEAN;
+BEGIN
+    IF NEW.alias_of IS NOT NULL THEN
+        SELECT alias_of INTO v_target_alias FROM keywords WHERE id = NEW.alias_of;
+        IF v_target_alias IS NOT NULL THEN
+            RAISE EXCEPTION 'ALIAS_CHAIN: alias target must itself be canonical.';
+        END IF;
+        SELECT EXISTS (SELECT 1 FROM keywords WHERE alias_of = NEW.id) INTO v_has_aliases;
+        IF v_has_aliases THEN
+            RAISE EXCEPTION 'ALIAS_HAS_MEMBERS: a keyword with aliases cannot become an alias.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_check_keyword_alias
+    BEFORE INSERT OR UPDATE ON keywords
+    FOR EACH ROW EXECUTE FUNCTION fn_check_keyword_alias();
 
 CREATE TABLE entry_keywords (
     entry_id    UUID     NOT NULL REFERENCES entries(id)  ON DELETE CASCADE,

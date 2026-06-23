@@ -1,0 +1,77 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage tags · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.png" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <div class="page-head">
+      <p class="eyebrow">Keywords</p>
+      <h1>Manage tags &amp; synonyms</h1>
+      <hr class="rule-brass" />
+      <p class="lede">Group synonymous tags so they connect the same entries. Once
+        linked, searching any tag in a group finds entries tagged with any of its
+        synonyms, and the related-entry suggestions treat them as one. Entries keep
+        the exact tag they were given.</p>
+    </div>
+
+    <section class="panel mt-5">
+      <h2>Link tags as synonyms</h2>
+      <p class="muted text-sm">Make the first tag a synonym of the second. If the
+        second tag already belongs to a group, the first joins that group.</p>
+      <form id="merge-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label for="merge-source">Make this tag…</label>
+            <select class="select" id="merge-source" name="source"></select>
+          </div>
+          <div class="field">
+            <label for="merge-target">…a synonym of</label>
+            <select class="select" id="merge-target" name="target"></select>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="merge-btn">Link synonyms</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel mt-5">
+      <h2>Synonym groups</h2>
+      <p class="muted text-sm">Each group shares one canonical tag (shown first).
+        Detach a synonym to make it stand alone again.</p>
+      <div class="field">
+        <input class="input" type="text" id="group-filter" placeholder="Filter tags…"
+               autocapitalize="none" spellcheck="false" />
+      </div>
+      <div id="groups-list" class="mt-4"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/tags.js"></script>
+</body>
+</html>

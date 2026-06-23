@@ -67,7 +67,7 @@ async function collectPortableData(includePrivate) {
   const sourcesQ = db.query(
     'SELECT name, colour, text_colour, is_preset FROM sources ORDER BY id'
   );
-  const keywordsQ = db.query('SELECT tag FROM keywords ORDER BY tag');
+  const keywordsQ = db.query('SELECT id, tag, alias_of FROM keywords ORDER BY tag');
   const entriesQ = db.query(
     `SELECT e.id, e.title, e.topic, e.stance, e.argument_type, e.source_type,
             e.date_published, e.gist, e.is_private, e.link, e.local_path,
@@ -135,7 +135,18 @@ async function collectPortableData(includePrivate) {
   // from rows they cannot see).
   const usedTags = new Set();
   for (const list of kwByEntry.values()) for (const t of list) usedTags.add(t);
-  const filteredKeywords = keywords.rows.filter((k) => usedTags.has(k.tag));
+  // Carry alias links as tag → canonical-tag pairs, but only when BOTH ends are
+  // exported. The receiving instance applies these best-effort (see import.js).
+  const tagById = new Map(keywords.rows.map((k) => [k.id, k.tag]));
+  const filteredKeywords = keywords.rows
+    .filter((k) => usedTags.has(k.tag))
+    .map((k) => {
+      const canonicalTag = k.alias_of != null ? tagById.get(k.alias_of) : null;
+      return {
+        tag: k.tag,
+        alias_of_tag: canonicalTag && usedTags.has(canonicalTag) ? canonicalTag : null,
+      };
+    });
 
   return {
     sources: sources.rows,
@@ -200,7 +211,7 @@ async function collectBackupData() {
       `SELECT id, name, colour, text_colour, is_preset, created_by, created_at
          FROM sources ORDER BY id`
     ),
-    db.query('SELECT id, tag FROM keywords ORDER BY id'),
+    db.query('SELECT id, tag, alias_of FROM keywords ORDER BY id'),
     db.query(
       `SELECT id, title, topic, stance, argument_type, source_type, source_id,
               date_published, gist, is_private, link, local_path,

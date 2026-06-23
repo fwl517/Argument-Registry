@@ -130,6 +130,24 @@ async function importPortable(data, files) {
       stats.keywords++;
     }
 
+    // 2b. Apply alias links best-effort. Only link a tag that has no existing
+    //     local alias, and only onto a canonical local keyword — so an import
+    //     never overrides this instance's own keyword curation.
+    for (const k of data.keywords || []) {
+      if (!k.alias_of_tag) continue;
+      const aliasId = keywordIdByTag.get(k.tag);
+      const canonicalId = keywordIdByTag.get(k.alias_of_tag);
+      if (!aliasId || !canonicalId || aliasId === canonicalId) continue;
+      await client.query(
+        `UPDATE keywords k SET alias_of = $1
+           WHERE k.id = $2
+             AND k.alias_of IS NULL
+             AND NOT EXISTS (SELECT 1 FROM keywords m WHERE m.alias_of = k.id)
+             AND (SELECT alias_of FROM keywords WHERE id = $1) IS NULL`,
+        [canonicalId, aliasId]
+      );
+    }
+
     // 3. Insert entries with fresh UUIDs. Build an old→new id map so
     //    relations can be remapped after.
     const newIdByOldId = new Map();
@@ -362,11 +380,18 @@ async function importBackup(data, files) {
     );
 
     // ── Keywords (preserve IDs) ─────────────────────────────────────────────
+    // Two passes: insert every row canonical first, then set alias_of. This
+    // avoids forward-reference FK failures when an alias precedes its canonical.
     for (const k of data.keywords || []) {
       await client.query(
         'INSERT INTO keywords (id, tag) VALUES ($1, $2)',
         [k.id, k.tag]
       );
+    }
+    for (const k of data.keywords || []) {
+      if (k.alias_of != null) {
+        await client.query('UPDATE keywords SET alias_of = $1 WHERE id = $2', [k.alias_of, k.id]);
+      }
     }
     await client.query(
       "SELECT setval('keywords_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM keywords), 0), 1))"

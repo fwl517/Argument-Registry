@@ -250,9 +250,14 @@ router.get(
       params.push(q.group_id.trim());
     }
     if (typeof q.keyword === 'string' && q.keyword.trim() !== '') {
+      // Match by concept, not exact tag: any synonym of the searched tag counts.
+      // The concept of a keyword is COALESCE(alias_of, id). An unknown tag yields
+      // a NULL subselect, so nothing matches (same as the old exact behaviour).
       where.push(
         `EXISTS (SELECT 1 FROM entry_keywords ek JOIN keywords k ON ek.keyword_id = k.id
-                  WHERE ek.entry_id = e.id AND k.tag = $${i++})`
+                  WHERE ek.entry_id = e.id
+                    AND COALESCE(k.alias_of, k.id) =
+                        (SELECT COALESCE(alias_of, id) FROM keywords WHERE tag = $${i++}))`
       );
       params.push(normaliseTag(q.keyword));
     }
@@ -373,14 +378,15 @@ router.get(
       for (const r of rows) note(r.id, 'topic');
     }
 
-    // (b) Shared keyword(s), tracking which tags matched.
+    // (b) Shared keyword *concept* — synonyms count as a match. Report the other
+    //     entry's actual tag so the UI shows what it was tagged with.
     {
       const { rows } = await db.query(
-        `SELECT ek2.entry_id AS id, k.tag
+        `SELECT ek2.entry_id AS id, k2.tag
            FROM entry_keywords ek1
-           JOIN entry_keywords ek2
-             ON ek2.keyword_id = ek1.keyword_id AND ek2.entry_id <> ek1.entry_id
-           JOIN keywords k ON k.id = ek1.keyword_id
+           JOIN keywords k1 ON k1.id = ek1.keyword_id
+           JOIN keywords k2 ON COALESCE(k2.alias_of, k2.id) = COALESCE(k1.alias_of, k1.id)
+           JOIN entry_keywords ek2 ON ek2.keyword_id = k2.id AND ek2.entry_id <> ek1.entry_id
           WHERE ek1.entry_id = $1`,
         [selfId]
       );

@@ -99,6 +99,7 @@ export function buildNav(session) {
 
   if (hasPermission(session, 'Write')) {
     nav.appendChild(link('/upload.html', 'New entry'));
+    nav.appendChild(link('/tags.html', 'Tags'));
   }
   if (hasPermission(session, 'Admin')) {
     nav.appendChild(link('/admin.html', 'Members'));
