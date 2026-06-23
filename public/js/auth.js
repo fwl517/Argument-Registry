@@ -94,7 +94,6 @@ export function buildNav(session) {
   }
 
   nav.appendChild(link('/dashboard.html', 'Dashboard'));
-  nav.appendChild(link('/index.html', 'Public view'));
   nav.appendChild(link('/graph.html', 'Clash map'));
 
   if (hasPermission(session, 'Write')) {
