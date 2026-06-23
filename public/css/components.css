@@ -624,6 +624,45 @@
 }
 .pill button:hover { background: rgba(255,255,255,0.34); }
 
+/* — Autocomplete (custom suggestion menu — topic + keyword inputs) ——— */
+.ac-host { position: relative; }
+.ac-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: var(--sp-1);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.ac-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+.ac-item.is-active,
+.ac-item:hover { background: color-mix(in srgb, var(--brass) 16%, var(--surface)); }
+.ac-item__label { font-weight: 500; }
+.ac-item__hint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 /* — Search / filter bar ——————————————————————————————————— */
 .searchbar {
   background: var(--surface);

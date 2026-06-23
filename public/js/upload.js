@@ -14,7 +14,7 @@
 
 import { apiFetch, apiUpload, errorMessage } from './api.js';
 import {
-  $, el, clear, queryParam, toast, showFieldErrors, formatDate,
+  $, el, clear, queryParam, toast, showFieldErrors, formatDate, attachAutocomplete,
 } from './utils.js';
 import { bootstrap } from './auth.js';
 
@@ -63,35 +63,18 @@ let entryId = null;
 let existingLocalPath = null; // current attached file in edit mode
 let anonTouched = false; // whether the user changed the anonymise box (edit mode)
 const keywords = new Set();
-let allKeywords = []; // [{ tag, alias_of, canonical_tag }] for the keyword datalist
+let allKeywords = []; // [{ tag, alias_of, canonical_tag }] — keyword suggestion pool
+let allTopics = [];   // [string] — topic suggestion pool
 
-/* — Existing-value suggestions (topic + keyword datalists) ———————— */
-function refreshKeywordSuggestions() {
-  const list = $('#keyword-list');
-  if (!list) return;
-  clear(list);
-  for (const k of allKeywords) {
-    if (keywords.has(k.tag)) continue; // don't suggest tags already added
-    const opt = el('option', { value: k.tag });
-    // Surface that an alias will fold into its canonical group.
-    if (k.alias_of != null && k.canonical_tag) opt.label = `${k.tag} → ${k.canonical_tag}`;
-    list.appendChild(opt);
-  }
-}
-
+/* — Existing-value suggestions (topic + keyword autocomplete) ———————— */
 async function loadSuggestions() {
   try {
     const [topics, kws] = await Promise.all([
       apiFetch('/entries/topics', { noRedirect: true }).catch(() => []),
       apiFetch('/keywords', { noRedirect: true }).catch(() => []),
     ]);
-    const topicList = $('#topic-list');
-    if (topicList && Array.isArray(topics)) {
-      clear(topicList);
-      topics.forEach((t) => topicList.appendChild(el('option', { value: t })));
-    }
+    allTopics = Array.isArray(topics) ? topics : [];
     allKeywords = Array.isArray(kws) ? kws : [];
-    refreshKeywordSuggestions();
   } catch (_e) {
     /* suggestions are a convenience — never block the form on a fetch failure */
   }
@@ -147,8 +130,6 @@ function renderPills(container) {
     ]);
     container.insertBefore(pill, input);
   }
-  // Keep suggestions in sync — drop tags that are already added.
-  refreshKeywordSuggestions();
 }
 
 function normaliseTag(raw) {
@@ -403,7 +384,31 @@ async function init() {
 
   // Keyword pills + source preview + add-source.
   setupKeywordInput($('#keyword-input'));
+
+  // Existing-value suggestions: a custom, site-styled autocomplete (not the
+  // unstyleable native <datalist>). Data loads async; getItems reads the live
+  // pools so the menus populate as soon as the fetch resolves.
   loadSuggestions();
+  attachAutocomplete(form.topic, {
+    getItems: () => allTopics.map((t) => ({ value: t })),
+    onSelect: (it) => { form.topic.value = it.value; form.topic.focus(); },
+  });
+  const kwInput = $('#f-keyword-input');
+  attachAutocomplete(kwInput, {
+    host: $('#keyword-input'),
+    getItems: () => allKeywords
+      .filter((k) => !keywords.has(k.tag))
+      .map((k) => ({
+        value: k.tag,
+        hint: (k.alias_of != null && k.canonical_tag) ? `→ ${k.canonical_tag}` : '',
+      })),
+    onSelect: (it) => {
+      keywords.add(it.value);
+      renderPills($('#keyword-input'));
+      kwInput.value = '';
+      kwInput.focus();
+    },
+  });
   sourceSelect.addEventListener('change', () => updateSourcePreview(sourceSelect, sourcePreview));
   form.anonymise_uploader.addEventListener('change', () => { anonTouched = true; });
 

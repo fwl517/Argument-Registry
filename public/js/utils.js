@@ -172,6 +172,120 @@ export function queryParam(name) {
   return new URLSearchParams(location.search).get(name);
 }
 
+/* — Autocomplete ——————————————————————————————————————————— */
+
+/**
+ * Attach a custom, site-styled suggestion menu to a text input. Replaces the
+ * native <datalist> (which can't be CSS-styled) with a .ac-menu rendered from
+ * design tokens. CSP-safe: styling is via classes, not inline styles.
+ *
+ * @param {HTMLInputElement} input
+ * @param {object} opts
+ *   - getItems(): () => Array<{ value: string, hint?: string }>  current candidates
+ *   - onSelect(item): called when an item is chosen
+ *   - host: positioned ancestor to anchor the menu to (defaults to a wrapper
+ *           created around the input). Pass the field container to span its width.
+ *   - max: maximum suggestions shown (default 8)
+ */
+export function attachAutocomplete(input, opts = {}) {
+  const { getItems, onSelect, max = 8 } = opts;
+
+  // The menu is absolutely positioned, so it needs a positioned ancestor.
+  let host = opts.host;
+  if (host) {
+    host.classList.add('ac-host');
+  } else {
+    host = el('div', { class: 'ac-host' });
+    input.parentNode.insertBefore(host, input);
+    host.appendChild(input);
+  }
+
+  const menu = el('ul', { class: 'ac-menu', role: 'listbox' });
+  menu.hidden = true;
+  host.appendChild(menu);
+
+  let matches = [];
+  let active = -1;
+
+  const close = () => {
+    menu.hidden = true;
+    active = -1;
+    clear(menu);
+    input.setAttribute('aria-expanded', 'false');
+  };
+
+  const highlight = (idx) => {
+    active = idx;
+    [...menu.children].forEach((li, i) => li.classList.toggle('is-active', i === idx));
+  };
+
+  const choose = (idx) => {
+    const it = matches[idx];
+    if (!it) return;
+    onSelect?.(it);
+    close();
+  };
+
+  const render = () => {
+    const q = input.value.trim().toLowerCase();
+    const all = getItems?.() || [];
+    matches = (q ? all.filter((it) => it.value.toLowerCase().includes(q)) : all.slice())
+      // Prefix matches first, then keep the source order.
+      .sort((a, b) => {
+        if (!q) return 0;
+        return (a.value.toLowerCase().startsWith(q) ? 0 : 1)
+             - (b.value.toLowerCase().startsWith(q) ? 0 : 1);
+      })
+      .slice(0, max);
+
+    clear(menu);
+    active = -1;
+    if (!matches.length) { close(); return; }
+
+    matches.forEach((it, idx) => {
+      const li = el('li', { class: 'ac-item', role: 'option' }, [
+        el('span', { class: 'ac-item__label', text: it.value }),
+      ]);
+      if (it.hint) li.appendChild(el('span', { class: 'ac-item__hint', text: it.hint }));
+      // mousedown (not click) so selection fires before the input's blur.
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); choose(idx); });
+      li.addEventListener('mousemove', () => highlight(idx));
+      menu.appendChild(li);
+    });
+    menu.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  };
+
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-expanded', 'false');
+
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  input.addEventListener('blur', () => setTimeout(close, 120));
+
+  // Capture phase so we can preempt other keydown handlers (e.g. the keyword
+  // pill committer) — but only stop propagation when we actually consume the key.
+  input.addEventListener('keydown', (e) => {
+    if (menu.hidden) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault(); e.stopPropagation();
+      highlight(active + 1 >= matches.length ? 0 : active + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); e.stopPropagation();
+      highlight(active - 1 < 0 ? matches.length - 1 : active - 1);
+    } else if (e.key === 'Enter' && active >= 0) {
+      e.preventDefault(); e.stopPropagation();
+      choose(active);
+    } else if (e.key === 'Escape') {
+      e.stopPropagation();
+      close();
+    }
+  }, true);
+
+  return { close, refresh: render };
+}
+
 /** Apply field errors ({ fieldName: message }) onto a form's .field-error nodes. */
 export function showFieldErrors(formEl, fields) {
   if (!formEl) return;
