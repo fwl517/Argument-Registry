@@ -37,6 +37,9 @@ const EXT_TO_MIME = {
   '.webp': 'image/webp',
   '.avif': 'image/avif',
   '.bmp': 'image/bmp',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
 };
 
 // POST /api/files  (Write or above)
@@ -102,13 +105,15 @@ router.get(
     const contentType = EXT_TO_MIME[ext] || 'application/octet-stream';
     // Known (previewable) types are shown inline; anything else downloads.
     const disposition = EXT_TO_MIME[ext] ? 'inline' : 'attachment';
+    const total = fs.statSync(resolved).size;
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Advertise range support so media players can seek without re-downloading.
+    res.setHeader('Accept-Ranges', 'bytes');
 
-    const stream = fs.createReadStream(resolved);
-    stream.on('error', () => {
+    const onStreamError = () => {
       if (!res.headersSent) {
         res.status(500).json({
           error: { code: 'INTERNAL_SERVER_ERROR', message: 'Could not read file.' },
@@ -116,8 +121,44 @@ router.get(
       } else {
         res.destroy();
       }
-    });
-    stream.pipe(res);
+    };
+
+    // Honour a Range request (video/audio scrubbing, resumable downloads). A
+    // single "bytes=start-end" range is supported; multipart ranges are not.
+    const rangeHeader = req.headers.range;
+    if (rangeHeader) {
+      const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+      if (!m || (m[1] === '' && m[2] === '')) {
+        res.status(416).setHeader('Content-Range', `bytes */${total}`);
+        return res.end();
+      }
+      let start;
+      let end;
+      if (m[1] === '') {
+        // Suffix range: the final N bytes.
+        const suffix = parseInt(m[2], 10);
+        start = Math.max(0, total - suffix);
+        end = total - 1;
+      } else {
+        start = parseInt(m[1], 10);
+        end = m[2] === '' ? total - 1 : Math.min(parseInt(m[2], 10), total - 1);
+      }
+      if (start > end || start >= total) {
+        res.status(416).setHeader('Content-Range', `bytes */${total}`);
+        return res.end();
+      }
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+      res.setHeader('Content-Length', String(end - start + 1));
+      const ranged = fs.createReadStream(resolved, { start, end });
+      ranged.on('error', onStreamError);
+      return ranged.pipe(res);
+    }
+
+    res.setHeader('Content-Length', String(total));
+    const stream = fs.createReadStream(resolved);
+    stream.on('error', onStreamError);
+    return stream.pipe(res);
   })
 );
 

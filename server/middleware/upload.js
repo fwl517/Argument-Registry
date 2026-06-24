@@ -35,7 +35,13 @@ const MIME_TO_EXT = {
   'image/gif': '.gif',
   'image/webp': '.webp',
   'image/avif': '.avif',
-  'image/bmp': '.bmp'
+  'image/bmp': '.bmp',
+
+  // Audio / video
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'audio/mpeg': '.mp3',
+  'audio/mp3': '.mp3'
 };
 
 const storage = multer.diskStorage({

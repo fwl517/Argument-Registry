@@ -50,6 +50,8 @@ const CLASH_GROUPS = [
 const PREVIEW = {
   image: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp'],
   pdf: ['pdf'],
+  video: ['mp4', 'webm'],
+  audio: ['mp3'],
   markdown: ['md', 'markdown'],
   text: ['txt', 'csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'log'],
 };
@@ -77,6 +79,8 @@ function fileExt(path) {
 function previewKind(ext) {
   if (PREVIEW.image.includes(ext)) return 'image';
   if (PREVIEW.pdf.includes(ext)) return 'pdf';
+  if (PREVIEW.video.includes(ext)) return 'video';
+  if (PREVIEW.audio.includes(ext)) return 'audio';
   if (PREVIEW.markdown.includes(ext)) return 'markdown';
   if (PREVIEW.text.includes(ext)) return 'text';
   return null;
@@ -111,6 +115,19 @@ async function renderInlinePreview(localPath, label) {
   }
   if (kind === 'pdf') {
     reveal(el('iframe', { class: 'file-preview__frame', src, title: label || 'Attached file', loading: 'lazy' }));
+    return;
+  }
+  // Video / audio stream natively via the range-aware files endpoint.
+  if (kind === 'video') {
+    const video = el('video', { class: 'file-preview__video', src, controls: 'controls', preload: 'metadata' });
+    video.addEventListener('error', () => { clear(wrap); wrap.classList.add('hidden'); });
+    reveal(video);
+    return;
+  }
+  if (kind === 'audio') {
+    const audio = el('audio', { class: 'file-preview__audio', src, controls: 'controls', preload: 'metadata' });
+    audio.addEventListener('error', () => { clear(wrap); wrap.classList.add('hidden'); });
+    reveal(audio);
     return;
   }
 

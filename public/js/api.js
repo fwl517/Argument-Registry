@@ -91,7 +91,7 @@ export function errorMessage(err, fallback = 'Something went wrong.') {
     VALIDATION: 'Please check the highlighted fields.',
     DUPLICATE: 'That already exists.',
     DUPLICATE_RELATION: 'These two entries are already linked that way.',
-    FILE_TOO_LARGE: 'That file is too large (50 MB maximum).',
+    FILE_TOO_LARGE: 'That file is too large (100 MB maximum).',
     UNSUPPORTED_FILE_TYPE: 'This file type is not accepted.',
     FOREIGN_KEY_VIOLATION: 'A referenced item no longer exists.',
     RATE_LIMITED: 'Too many attempts. Please wait a moment and try again.',
