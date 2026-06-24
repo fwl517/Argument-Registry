@@ -51,9 +51,12 @@ function entryCard(entry) {
   // it lives on the full entry page and is hinted by the corner argument-type icon.
   const head = el('div', { class: 'entry-card__head' });
   if (entry.topic) {
+    // 'Neutral/Background' reads better as just 'Neutral' in the hover hint.
+    const stanceLabel = (entry.stance || '').split('/')[0];
     head.appendChild(el('span', {
       class: 'entry-card__topic',
       dataset: { stance: entry.stance || '' },
+      title: stanceLabel ? `${stanceLabel} on ${entry.topic}` : entry.topic,
       text: entry.topic,
     }));
   }
