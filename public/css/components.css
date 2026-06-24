@@ -140,6 +140,7 @@
   flex-direction: column;
   gap: 2px;
 }
+.nav-menu__panel[hidden] { display: none; }
 .nav-menu__item {
   display: block;
   padding: var(--sp-2) var(--sp-3);
