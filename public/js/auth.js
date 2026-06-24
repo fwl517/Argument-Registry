@@ -85,25 +85,67 @@ export function buildNav(session) {
     return a;
   };
 
+  // A "Menu" dropdown that folds the secondary destinations off the bar.
+  // `items` is an already permission-filtered array of { href, label }.
+  const dropdown = (label, items) => {
+    const wrap = el('div', { class: 'nav-menu' });
+    const caret = el('span', { class: 'nav-menu__caret', 'aria-hidden': 'true', text: '▾' });
+    const trigger = el('button', {
+      class: 'nav-link nav-menu__trigger',
+      type: 'button',
+      'aria-haspopup': 'true',
+      'aria-expanded': 'false',
+    }, [label, caret]);
+    const panel = el('div', { class: 'nav-menu__panel', role: 'menu' });
+    panel.hidden = true;
+
+    for (const it of items) {
+      const a = el('a', { href: it.href, class: 'nav-menu__item', role: 'menuitem', text: it.label });
+      if (it.href.endsWith(here)) {
+        a.classList.add('is-active');
+        trigger.classList.add('is-active'); // surface the active child on the closed bar
+      }
+      panel.appendChild(a);
+    }
+
+    const close = () => { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+    const open = () => { panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); };
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.hidden ? open() : close();
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+    wrap.append(trigger, panel);
+    return wrap;
+  };
+
   if (!session) {
     nav.appendChild(link('/index.html', 'Browse'));
-    nav.appendChild(link('/graph.html', 'Clash map'));
+    nav.appendChild(dropdown('Menu', [{ href: '/graph.html', label: 'Clash map' }]));
     nav.appendChild(el('span', { class: 'nav-sep' }));
     nav.appendChild(el('a', { href: '/login.html', class: 'btn btn--brass btn--sm', text: 'Sign in' }));
     return;
   }
 
   nav.appendChild(link('/dashboard.html', 'Dashboard'));
-  nav.appendChild(link('/graph.html', 'Clash map'));
-  nav.appendChild(link('/dead-ends.html', 'Dead ends'));
-
   if (hasPermission(session, 'Write')) {
     nav.appendChild(link('/upload.html', 'New entry'));
-    nav.appendChild(link('/tags.html', 'Tags'));
+  }
+
+  // Secondary destinations, gated and folded into the dropdown.
+  const menuItems = [
+    { href: '/graph.html', label: 'Clash map' },
+    { href: '/dead-ends.html', label: 'Dead ends' },
+  ];
+  if (hasPermission(session, 'Write')) {
+    menuItems.push({ href: '/tags.html', label: 'Tags' });
   }
   if (hasPermission(session, 'Admin')) {
-    nav.appendChild(link('/admin.html', 'Members'));
+    menuItems.push({ href: '/admin.html', label: 'Members' });
   }
+  nav.appendChild(dropdown('Menu', menuItems));
 
   nav.appendChild(el('span', { class: 'nav-sep' }));
 
