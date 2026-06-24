@@ -47,6 +47,7 @@ function serialiseEntry(row, keywords = []) {
     title: row.title,
     topic: row.topic,
     stance: row.stance,
+    society_alignment: row.society_alignment,
     argument_type: row.argument_type,
     source_type: row.source_type,
     source: buildSource(row),

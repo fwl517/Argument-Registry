@@ -126,6 +126,7 @@ function buildState(data, currentId) {
     id: node.id,
     title: node.title,
     stance: node.stance,
+    society_alignment: node.society_alignment,
     x: Math.cos((i / n) * 2 * Math.PI) * radius,
     y: Math.sin((i / n) * 2 * Math.PI) * radius,
     vx: 0,
@@ -326,7 +327,11 @@ function buildSvg(container, state, { currentId }) {
   const nodeEls = state.nodes.map((node) => {
     const circle = document.createElementNS(SVG_NS, 'circle');
     circle.setAttribute('class', 'graph-node');
+    // Node fill = society alignment (Aligned / Opposed / Neutral). data-stance is
+    // kept too for any consumers that still key off it, but colour comes from
+    // data-alignment in the stylesheet.
     circle.setAttribute('data-stance', node.stance || '');
+    circle.setAttribute('data-alignment', node.society_alignment || '');
     circle.setAttribute('data-node-id', node.id);
     circle.setAttribute('r', String(node.radius));
     if (node.id === currentId) circle.setAttribute('data-current', 'true');

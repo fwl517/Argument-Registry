@@ -44,6 +44,16 @@ CREATE TYPE t_stance AS ENUM (
     'Neutral/Background'
 );
 
+-- Where the entry sits relative to OUR society's position. Distinct from
+-- t_stance, which is the argument's position on its own listed topic. This
+-- captures whether the material agrees with, opposes, or is neutral toward
+-- the society — used to spot topics where we still need counter-arguments.
+CREATE TYPE t_society_alignment AS ENUM (
+    'Aligned',
+    'Opposed',
+    'Neutral'
+);
+
 CREATE TYPE t_argument_type AS ENUM (
     'Study',
     'Article',
@@ -341,6 +351,7 @@ CREATE TABLE entries (
     title                    VARCHAR(500)      NOT NULL,
     topic                    VARCHAR(500)      NOT NULL,
     stance                   t_stance          NOT NULL,
+    society_alignment        t_society_alignment NOT NULL,
     argument_type            t_argument_type   NOT NULL,
     source_type              t_source_type     NOT NULL,
     source_id                INTEGER           REFERENCES sources(id) ON DELETE SET NULL,
@@ -375,6 +386,7 @@ CREATE TABLE entries (
     )
 );
 
+COMMENT ON COLUMN entries.society_alignment IS 'Where the entry sits relative to our society''s position (Aligned/Opposed/Neutral). Distinct from stance, which is the argument''s position on its own topic.';
 COMMENT ON COLUMN entries.source_type IS 'Category of the source material (what kind of document).';
 COMMENT ON COLUMN entries.source_id   IS 'Specific party or organisation. FK to sources table. Nullable.';
 COMMENT ON COLUMN entries.local_path  IS 'Relative path from FILE_STORE_PATH root. Served via /api/files only.';
@@ -428,6 +440,7 @@ CREATE TRIGGER trg_touch_updated_at
 CREATE INDEX idx_entries_fts       ON entries USING GIN (to_tsvector('english', title || ' ' || gist));
 CREATE INDEX idx_entries_private   ON entries(is_private);
 CREATE INDEX idx_entries_stance    ON entries(stance);
+CREATE INDEX idx_entries_society_alignment ON entries(society_alignment);
 CREATE INDEX idx_entries_srctype   ON entries(source_type);
 CREATE INDEX idx_entries_argtype   ON entries(argument_type);
 CREATE INDEX idx_entries_topic     ON entries(topic text_pattern_ops);

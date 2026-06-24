@@ -102,7 +102,7 @@ router.get(
     if (selectedIds.size > 0) {
       const ids = Array.from(selectedIds);
       const { rows: nodeRows } = await db.query(
-        `SELECT id, title, stance, is_private
+        `SELECT id, title, stance, society_alignment, is_private
            FROM entries
           WHERE id = ANY($1::uuid[])`,
         [ids]
@@ -111,6 +111,7 @@ router.get(
         id: n.id,
         title: n.title,
         stance: n.stance,
+        society_alignment: n.society_alignment,
         is_private: n.is_private,
       }));
     }

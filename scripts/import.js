@@ -180,18 +180,19 @@ async function importPortable(data, files) {
 
       const { rows } = await client.query(
         `INSERT INTO entries
-           (title, topic, stance, argument_type, source_type, source_id,
+           (title, topic, stance, society_alignment, argument_type, source_type, source_id,
             date_published, gist, is_private, link, local_path,
             uploader_id, foreign_uploader_name, foreign_uploader_role,
             foreign_uploader_group,
             anonymise_uploader, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
-                 NULL, $12, $13, $14, $15, $16, $17)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
+                 NULL, $13, $14, $15, $16, $17, $18)
          RETURNING id`,
         [
           e.title,
           e.topic,
           e.stance,
+          e.society_alignment || 'Neutral', // older exports predate this column
           e.argument_type,
           e.source_type,
           sourceId,
@@ -412,17 +413,18 @@ async function importBackup(data, files) {
 
       await client.query(
         `INSERT INTO entries
-           (id, title, topic, stance, argument_type, source_type, source_id,
+           (id, title, topic, stance, society_alignment, argument_type, source_type, source_id,
             date_published, gist, is_private, link, local_path,
             uploader_id, foreign_uploader_name, foreign_uploader_role,
             foreign_uploader_group, anonymise_uploader,
             created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
         [
           e.id,
           e.title,
           e.topic,
           e.stance,
+          e.society_alignment || 'Neutral', // older backups predate this column
           e.argument_type,
           e.source_type,
           e.source_id,

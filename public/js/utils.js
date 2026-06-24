@@ -106,6 +106,21 @@ export function stanceTag(stance) {
   return el('span', { class: 'badge badge--stance', dataset: { stance }, text: stance });
 }
 
+/**
+ * Society-alignment badge (Aligned / Opposed / Neutral). Where the entry sits
+ * relative to OUR society — distinct from stance, which is its position on its
+ * own topic. The leading mark keeps it visually separate from the stance badge.
+ */
+export function alignmentTag(alignment) {
+  if (!alignment) return null;
+  return el('span', {
+    class: 'badge badge--alignment',
+    dataset: { alignment },
+    title: 'Alignment with our society',
+    text: `Society: ${alignment}`,
+  });
+}
+
 /** Source-type category badge (e.g. "Academic"). */
 export function metaBadge(text) {
   if (!text) return null;

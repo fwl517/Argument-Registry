@@ -12,7 +12,7 @@
 
 import {
   el, clear, esc, formatShortDate,
-  sourceTag, keywordTag, privateBadge, groupTag,
+  sourceTag, alignmentTag, keywordTag, privateBadge, groupTag,
 } from './utils.js';
 import { renderMarkdown } from './markdown.js';
 import { argumentTypeIcon } from './icons.js';
@@ -53,6 +53,8 @@ function entryCard(entry) {
   }
   const src = sourceTag(entry.source);
   if (src) head.appendChild(src);
+  const alignment = alignmentTag(entry.society_alignment);
+  if (alignment) head.appendChild(alignment);
   if (entry.is_private) head.appendChild(privateBadge());
   // Always present (even when empty) so it reserves the corner icon's vertical
   // space and the title can never slide underneath it.

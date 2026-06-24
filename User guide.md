@@ -78,7 +78,12 @@ You need **Write** permission or higher. Go to the upload/new-entry page
 (`/upload.html`). You'll typically provide:
 
 - A title and the content/summary of the argument or source.
-- Its **stance** and the **party/source** it comes from.
+- Its **stance** (its position on its *own* topic — Pro / Con / Neutral) and the
+  **party/source** it comes from.
+- Its **society alignment** — where it sits relative to *our* society: **Aligned**
+  (agrees with us), **Opposed** (against us), or **Neutral**. This is separate from
+  stance, and it's what lets you spot topics where the opposing material outweighs
+  ours and we still need to upload counter-arguments.
 - Either a **web link** or an **attached file** (PDF/TXT/PNG/etc., up to 50 MB).
 - **Keywords/tags** to make it findable.
 - Whether it's **public or private**, and whether it's **anonymous**.
@@ -122,8 +127,10 @@ circles and arrows rather than a list of cards. There are two surfaces:
 
 Colours follow the rest of the site:
 
-- **Node fill** is the entry's stance — green for Pro, red for Con, grey for
-  Neutral/Background.
+- **Node fill** is the entry's **society alignment** — green for Aligned, red
+  for Opposed, grey for Neutral. A cluster of red nodes around one topic is a
+  signal that the opposing material outweighs ours and we may need to upload
+  counter-arguments.
 - **Arrow colour** is the relation type — red for Rebuts, orange for
   Counters, green for Evidence For, grey for Updates.
 

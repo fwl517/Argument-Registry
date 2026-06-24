@@ -12,7 +12,7 @@
 import { apiFetch, errorMessage } from './api.js';
 import {
   $, el, clear, esc, formatDate, queryParam,
-  sourceTag, stanceTag, metaBadge, keywordTag, privateBadge, groupTag, toast,
+  sourceTag, stanceTag, alignmentTag, metaBadge, keywordTag, privateBadge, groupTag, toast,
 } from './utils.js';
 import { bootstrap, hasPermission } from './auth.js';
 import { mountRelationEditor, removeRelation } from './relations.js';
@@ -172,6 +172,8 @@ function renderClashCard(item) {
   top.appendChild(link);
   const stance = stanceTag(item.stance);
   if (stance) top.appendChild(stance);
+  const alignment = alignmentTag(item.society_alignment);
+  if (alignment) top.appendChild(alignment);
   card.appendChild(top);
 
   if (item.context_note) {
@@ -248,6 +250,8 @@ function renderEntry(entry) {
   clear(badges);
   const stance = stanceTag(entry.stance);
   if (stance) badges.appendChild(stance);
+  const alignment = alignmentTag(entry.society_alignment);
+  if (alignment) badges.appendChild(alignment);
   const cat = metaBadge(entry.source_type);
   if (cat) badges.appendChild(cat);
   const src = sourceTag(entry.source);

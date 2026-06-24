@@ -20,6 +20,7 @@ import { bootstrap } from './auth.js';
 
 // Enum value lists (mirror the DB enum types exactly).
 const STANCES = ['Pro', 'Con', 'Neutral/Background'];
+const ALIGNMENTS = ['Aligned', 'Opposed', 'Neutral'];
 const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Argument', 'Other'];
 const SRC_TYPES = [
   'Our Party Platform',
@@ -204,6 +205,7 @@ async function loadEntry(form, sourceSelect, sourcePreview, fileInfo) {
   form.topic.value = entry.topic || '';
   form.gist.value = entry.gist || '';
   if (entry.stance) form.stance.value = entry.stance;
+  if (entry.society_alignment) form.society_alignment.value = entry.society_alignment;
   if (entry.argument_type) form.argument_type.value = entry.argument_type;
   if (entry.source_type) form.source_type.value = entry.source_type;
   form.link.value = entry.link || '';
@@ -238,6 +240,7 @@ function gatherCommon(form) {
     topic: form.topic.value.trim(),
     gist: form.gist.value.trim(),
     stance: form.stance.value,
+    society_alignment: form.society_alignment.value,
     argument_type: form.argument_type.value,
     source_type: form.source_type.value,
     source_id: form.source_id.value || '',
@@ -253,6 +256,7 @@ function clientValidate(data, hasFile) {
   if (!data.topic) fields.topic = 'Required.';
   if (!data.gist) fields.gist = 'Required.';
   if (!STANCES.includes(data.stance)) fields.stance = 'Choose a stance.';
+  if (!ALIGNMENTS.includes(data.society_alignment)) fields.society_alignment = 'Choose an alignment.';
   if (!ARG_TYPES.includes(data.argument_type)) fields.argument_type = 'Choose a type.';
   if (!SRC_TYPES.includes(data.source_type)) fields.source_type = 'Choose a category.';
   if (!data.link && !hasFile) fields.link = 'Provide a link, attach a file, or write a note.';
@@ -328,6 +332,7 @@ async function submitEdit(form, fileInput, submitBtn) {
       topic: data.topic,
       gist: data.gist,
       stance: data.stance,
+      society_alignment: data.society_alignment,
       argument_type: data.argument_type,
       source_type: data.source_type,
       source_id: data.source_id === '' ? null : data.source_id,
@@ -379,6 +384,7 @@ async function init() {
 
   // Static selects.
   fillSelect(form.stance, STANCES, { placeholder: '— Choose stance —' });
+  fillSelect(form.society_alignment, ALIGNMENTS, { placeholder: '— Choose alignment —' });
   fillSelect(form.argument_type, ARG_TYPES, { placeholder: '— Choose type —' });
   fillSelect(form.source_type, SRC_TYPES, { placeholder: '— Choose category —' });
 

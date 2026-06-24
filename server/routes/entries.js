@@ -20,6 +20,7 @@ const router = express.Router();
 
 // ── Enumerations (mirrors the DB enum types) ─────────────────────────────────
 const STANCES = ['Pro', 'Con', 'Neutral/Background'];
+const ALIGNMENTS = ['Aligned', 'Opposed', 'Neutral'];
 const ARG_TYPES = ['Study', 'Article', 'Raw Statistic', 'Policy Paper', 'Argument', 'Other'];
 const SRC_TYPES = [
   'Our Party Platform',
@@ -169,13 +170,13 @@ async function buildRelations(id, authed) {
   const visibility = authed ? '' : 'AND e.is_private = FALSE';
   const sql = `
     SELECT ar.id AS relation_id, ar.relation_type, 'forward' AS dir,
-           e.id AS entry_id, e.title, e.stance, ar.context_note
+           e.id AS entry_id, e.title, e.stance, e.society_alignment, ar.context_note
       FROM argument_relations ar
       JOIN entries e ON e.id = ar.target_id
      WHERE ar.source_id = $1 ${visibility}
     UNION ALL
     SELECT ar.id AS relation_id, ar.relation_type, 'reverse' AS dir,
-           e.id AS entry_id, e.title, e.stance, ar.context_note
+           e.id AS entry_id, e.title, e.stance, e.society_alignment, ar.context_note
       FROM argument_relations ar
       JOIN entries e ON e.id = ar.source_id
      WHERE ar.target_id = $1 ${visibility}
@@ -190,6 +191,7 @@ async function buildRelations(id, authed) {
       entry_id: r.entry_id,
       title: r.title,
       stance: r.stance,
+      society_alignment: r.society_alignment,
       context_note: r.context_note,
     });
   }
@@ -224,6 +226,10 @@ router.get(
     if (STANCES.includes(q.stance)) {
       where.push(`e.stance = $${i++}`);
       params.push(q.stance);
+    }
+    if (ALIGNMENTS.includes(q.society_alignment)) {
+      where.push(`e.society_alignment = $${i++}`);
+      params.push(q.society_alignment);
     }
     if (ARG_TYPES.includes(q.argument_type)) {
       where.push(`e.argument_type = $${i++}`);
@@ -433,7 +439,7 @@ router.get(
 
     // Hydrate display fields for the union.
     const { rows } = await db.query(
-      'SELECT id, title, topic, stance FROM entries WHERE id = ANY($1::uuid[])',
+      'SELECT id, title, topic, stance, society_alignment FROM entries WHERE id = ANY($1::uuid[])',
       [Array.from(hits.keys())]
     );
     const RANK = { topic: 0, keyword: 1, cluster: 2 };
@@ -444,6 +450,7 @@ router.get(
         title: r.title,
         topic: r.topic,
         stance: r.stance,
+        society_alignment: r.society_alignment,
         reasons: Array.from(h.reasons).sort((a, b) => RANK[a] - RANK[b]),
         matched_keywords: Array.from(h.matched_keywords).sort(),
       };
@@ -479,6 +486,7 @@ router.post(
     if (!topic) fields.topic = 'Required.';
     if (!gist) fields.gist = 'Required.';
     if (!STANCES.includes(b.stance)) fields.stance = 'Invalid stance.';
+    if (!ALIGNMENTS.includes(b.society_alignment)) fields.society_alignment = 'Invalid society alignment.';
     if (!ARG_TYPES.includes(b.argument_type)) fields.argument_type = 'Invalid argument type.';
     if (!SRC_TYPES.includes(b.source_type)) fields.source_type = 'Invalid source type.';
 
@@ -518,15 +526,16 @@ router.post(
       entryId = await db.withTransaction(async (client) => {
         const { rows } = await client.query(
           `INSERT INTO entries
-             (title, topic, stance, argument_type, source_type, source_id,
+             (title, topic, stance, society_alignment, argument_type, source_type, source_id,
               date_published, gist, is_private, link, local_path,
               uploader_id, anonymise_uploader)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
            RETURNING id`,
           [
             title,
             topic,
             b.stance,
+            b.society_alignment,
             b.argument_type,
             b.source_type,
             sourceId,
@@ -611,6 +620,13 @@ router.patch(
       else {
         sets.push(`stance = $${i++}`);
         params.push(b.stance);
+      }
+    }
+    if (b.society_alignment !== undefined) {
+      if (!ALIGNMENTS.includes(b.society_alignment)) fields.society_alignment = 'Invalid society alignment.';
+      else {
+        sets.push(`society_alignment = $${i++}`);
+        params.push(b.society_alignment);
       }
     }
     if (b.argument_type !== undefined) {

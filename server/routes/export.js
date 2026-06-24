@@ -69,7 +69,7 @@ async function collectPortableData(includePrivate) {
   );
   const keywordsQ = db.query('SELECT id, tag, alias_of FROM keywords ORDER BY tag');
   const entriesQ = db.query(
-    `SELECT e.id, e.title, e.topic, e.stance, e.argument_type, e.source_type,
+    `SELECT e.id, e.title, e.topic, e.stance, e.society_alignment, e.argument_type, e.source_type,
             e.date_published, e.gist, e.is_private, e.link, e.local_path,
             e.anonymise_uploader, e.created_at, e.updated_at,
             s.name        AS src_name,
@@ -179,6 +179,7 @@ function shapePortableEntry(row, keywords) {
     title: row.title,
     topic: row.topic,
     stance: row.stance,
+    society_alignment: row.society_alignment,
     argument_type: row.argument_type,
     source_type: row.source_type,
     source_name: row.src_name || null,
@@ -213,7 +214,7 @@ async function collectBackupData() {
     ),
     db.query('SELECT id, tag, alias_of FROM keywords ORDER BY id'),
     db.query(
-      `SELECT id, title, topic, stance, argument_type, source_type, source_id,
+      `SELECT id, title, topic, stance, society_alignment, argument_type, source_type, source_id,
               date_published, gist, is_private, link, local_path,
               uploader_id, foreign_uploader_name, foreign_uploader_role,
               foreign_uploader_group, anonymise_uploader,

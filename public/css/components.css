@@ -326,6 +326,17 @@
 .badge--stance[data-stance="Con"]        { color: var(--stance-con);     background: color-mix(in srgb, var(--stance-con-bg) 62%, transparent); }
 .badge--stance[data-stance="Neutral/Background"] { color: var(--stance-neutral); background: color-mix(in srgb, var(--stance-neutral-bg) 62%, transparent); }
 
+/* Society-alignment badge. Shares the stance palette (Aligned=green, Opposed=red,
+   Neutral=grey) but wears a coloured ring instead of a filled tint, so it reads as
+   a sibling of the stance badge without being mistaken for it. */
+.badge--alignment {
+  text-transform: none;
+  background: transparent;
+}
+.badge--alignment[data-alignment="Aligned"] { color: var(--stance-pro);     border-color: color-mix(in srgb, var(--stance-pro) 45%, transparent); }
+.badge--alignment[data-alignment="Opposed"] { color: var(--stance-con);     border-color: color-mix(in srgb, var(--stance-con) 45%, transparent); }
+.badge--alignment[data-alignment="Neutral"] { color: var(--stance-neutral); border-color: color-mix(in srgb, var(--stance-neutral) 45%, transparent); }
+
 .badge--meta {
   color: var(--text-muted);
   background: color-mix(in srgb, var(--surface-2) 55%, transparent);
@@ -1283,9 +1294,10 @@ table.data tbody tr:hover { background: var(--surface-2); }
   cursor: pointer;
   transition: opacity 0.15s ease, stroke-width 0.15s ease;
 }
-.graph-node[data-stance="Pro"]                  { fill: var(--stance-pro); }
-.graph-node[data-stance="Con"]                  { fill: var(--stance-con); }
-.graph-node[data-stance="Neutral/Background"]   { fill: var(--stance-neutral); }
+/* Node fill = society alignment (Aligned=green, Opposed=red, Neutral=grey). */
+.graph-node[data-alignment="Aligned"]   { fill: var(--stance-pro); }
+.graph-node[data-alignment="Opposed"]   { fill: var(--stance-con); }
+.graph-node[data-alignment="Neutral"]   { fill: var(--stance-neutral); }
 .graph-node:hover { stroke: var(--brass-soft); stroke-width: 3.5; }
 .graph-node[data-current="true"] {
   stroke: var(--brass);
@@ -1374,9 +1386,9 @@ table.data tbody tr:hover { background: var(--surface-2); }
   width: 10px; height: 10px; border-radius: 50%;
   background: currentColor;
 }
-.graph-legend__node[data-stance="Pro"]                 { color: var(--stance-pro); }
-.graph-legend__node[data-stance="Con"]                 { color: var(--stance-con); }
-.graph-legend__node[data-stance="Neutral/Background"]  { color: var(--stance-neutral); }
+.graph-legend__node[data-alignment="Aligned"]  { color: var(--stance-pro); }
+.graph-legend__node[data-alignment="Opposed"]  { color: var(--stance-con); }
+.graph-legend__node[data-alignment="Neutral"]  { color: var(--stance-neutral); }
 .graph-legend__edge::before {
   content: '';
   width: 22px; height: 2px;
