@@ -117,7 +117,7 @@ export function alignmentTag(alignment) {
     class: 'badge badge--alignment',
     dataset: { alignment },
     title: 'Alignment with our society',
-    text: `Society: ${alignment}`,
+    text: `Alignment: ${alignment}`,
   });
 }
 

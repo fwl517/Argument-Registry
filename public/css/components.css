@@ -190,13 +190,14 @@
   transform: translateY(-2px);
   border-left-color: var(--brass);
 }
-.entry-card[data-stance="Pro"]        { border-left-color: var(--stance-pro); }
-.entry-card[data-stance="Con"]        { border-left-color: var(--stance-con); }
-.entry-card[data-stance="Neutral/Background"] { border-left-color: var(--stance-neutral); }
+/* Left rail = society alignment (Aligned=green, Opposed=red, Neutral=grey). */
+.entry-card[data-alignment="Aligned"]   { border-left-color: var(--stance-pro); }
+.entry-card[data-alignment="Opposed"]   { border-left-color: var(--stance-con); }
+.entry-card[data-alignment="Neutral"]   { border-left-color: var(--stance-neutral); }
 
 /* Members-only entries get a warm cream surface (echoing the "members only"
    badge palette) so restricted material is identifiable at a glance without an
-   extra loud badge. The stance left-rail still shows through (higher specificity). */
+   extra loud badge. The alignment left-rail still shows through (higher specificity). */
 .entry-card--private {
   background-color: color-mix(in srgb, #E2B566 13%, var(--surface));
   border-color: color-mix(in srgb, #C8A86A 50%, var(--border));
@@ -217,6 +218,10 @@
   color: var(--text-muted);
   margin-bottom: 0;
 }
+/* Topic text carries the argument stance (Pro=green, Con=red, Neutral=grey). */
+.entry-card__topic[data-stance="Pro"]              { color: var(--stance-pro); }
+.entry-card__topic[data-stance="Con"]              { color: var(--stance-con); }
+.entry-card__topic[data-stance="Neutral/Background"] { color: var(--stance-neutral); }
 .entry-card__gist {
   font-family: var(--font-display);
   font-size: 0.95rem;

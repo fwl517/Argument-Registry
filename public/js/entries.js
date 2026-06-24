@@ -12,7 +12,7 @@
 
 import {
   el, clear, esc, formatShortDate,
-  sourceTag, alignmentTag, keywordTag, privateBadge, groupTag,
+  sourceTag, keywordTag, privateBadge, groupTag,
 } from './utils.js';
 import { renderMarkdown } from './markdown.js';
 import { argumentTypeIcon } from './icons.js';
@@ -36,25 +36,29 @@ function entryCard(entry) {
   const card = el('a', {
     class: entry.is_private ? 'entry-card entry-card--private' : 'entry-card',
     href: `/entry.html?id=${encodeURIComponent(entry.id)}`,
-    dataset: { stance: entry.stance || '' },
+    // Left rail = society alignment; the stance shows through the topic colour.
+    dataset: { alignment: entry.society_alignment || '' },
   });
 
   // Argument-type glyph, pinned to the top-right corner (colour = type).
   const typeIcon = argumentTypeIcon(entry.argument_type);
   if (typeIcon) card.appendChild(typeIcon);
 
-  // Header: topic eyebrow + inline badges (party source, members-only). No
-  // stance badge — the coloured left rail already carries it. The source
+  // Header: topic eyebrow + inline badges (party source, members-only). The
+  // topic colour carries the argument stance and the left rail carries the
+  // society alignment, so neither needs its own badge here. The source
   // *category* (source_type) is intentionally omitted to keep cards uncluttered;
   // it lives on the full entry page and is hinted by the corner argument-type icon.
   const head = el('div', { class: 'entry-card__head' });
   if (entry.topic) {
-    head.appendChild(el('span', { class: 'entry-card__topic', text: entry.topic }));
+    head.appendChild(el('span', {
+      class: 'entry-card__topic',
+      dataset: { stance: entry.stance || '' },
+      text: entry.topic,
+    }));
   }
   const src = sourceTag(entry.source);
   if (src) head.appendChild(src);
-  const alignment = alignmentTag(entry.society_alignment);
-  if (alignment) head.appendChild(alignment);
   if (entry.is_private) head.appendChild(privateBadge());
   // Always present (even when empty) so it reserves the corner icon's vertical
   // space and the title can never slide underneath it.
