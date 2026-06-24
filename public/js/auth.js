@@ -95,6 +95,7 @@ export function buildNav(session) {
 
   nav.appendChild(link('/dashboard.html', 'Dashboard'));
   nav.appendChild(link('/graph.html', 'Clash map'));
+  nav.appendChild(link('/dead-ends.html', 'Dead ends'));
 
   if (hasPermission(session, 'Write')) {
     nav.appendChild(link('/upload.html', 'New entry'));

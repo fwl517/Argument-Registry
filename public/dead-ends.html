@@ -1,0 +1,64 @@
+<!--
+  Political Society Argument & Source Database
+  -------------------------------------------------
+  Author:   BEN GREEN
+  GitHub:   https://github.com/fwl517/Argument-Registry
+  Licence:  CC0
+-->
+
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dead ends · Argument Registry</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+</head>
+<body data-require-auth="true">
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="/index.html">
+        <img src="favicon.png" alt="Society Logo" class="header-logo">
+        <span class="brand__mark">⬦&nbsp;Argument Registry</span>
+        <span id="society-name" class="brand__sub">Society Name</span>
+      </a>
+      <nav id="main-nav"></nav>
+    </div>
+  </header>
+
+  <!-- Thin associated-groups strip; populated by banner.js, hidden when empty. -->
+  <aside id="group-banner" class="group-banner" aria-label="Associated groups" hidden></aside>
+
+  <main class="container container--wide page">
+    <div class="page-head">
+      <p class="eyebrow">Members' view</p>
+      <h1>Dead ends</h1>
+      <hr class="rule-brass" />
+      <p class="lede">Opposing material we haven't answered yet: every entry marked
+        <strong>Opposed</strong> to our society that nothing in the database
+        <strong>counters</strong> or <strong>rebuts</strong>. These are the gaps where
+        a counter-argument still needs uploading.</p>
+      <p class="result-count" id="result-count">Loading…</p>
+    </div>
+
+    <section id="entry-results" aria-live="polite"></section>
+  </main>
+
+  <footer class="site-foot">
+    <p class="site-foot-inner">
+      Built by <strong>Ben Green</strong> ·
+      <a href="https://github.com/fwl517/Argument-Registry"
+        target="_blank" rel="noopener noreferrer">GitHub</a>
+    </p>
+    <p class="site-foot-inner">
+      This application template was created independently and is not affiliated with,
+      is not endorsed by, does not endorse, or represent any political society. It is free for
+      anyone to use under the CC0 license.
+    </p>
+  </footer>
+
+  <script type="module" src="/js/dead-ends.js"></script>
+</body>
+</html>

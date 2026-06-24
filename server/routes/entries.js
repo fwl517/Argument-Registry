@@ -11,7 +11,7 @@ const express = require('express');
 const db = require('../db');
 const config = require('../config');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
-const { requirePermission, atLeast, sameScope } = require('../middleware/auth');
+const { requirePermission, requireAuth, atLeast, sameScope } = require('../middleware/auth');
 const { upload, publicPathFor, removeUploaded } = require('../middleware/upload');
 const { serialiseEntry } = require('../utils/serialise');
 const { normaliseTag } = require('./keywords');
@@ -335,6 +335,58 @@ router.get(
       `SELECT DISTINCT topic FROM entries WHERE ${where.join(' AND ')} ORDER BY topic ASC`
     );
     res.json(rows.map((r) => r.topic));
+  })
+);
+
+// =============================================================================
+// GET /api/entries/dead-ends  — unanswered opposing material (members only)
+// -----------------------------------------------------------------------------
+// An entry is a "dead end" when its society_alignment is 'Opposed' but nothing
+// in the database counters or rebuts it — i.e. no incoming Counters/Rebuts
+// relation points at it. These are the opposing arguments we have not yet
+// pushed back on, so the page is a worklist for uploading counter-arguments.
+//
+// This is a cheap anti-join (NOT EXISTS), served by the existing
+// idx_rel_target and idx_entries_society_alignment indexes, so there is no need
+// for a maintained/denormalised index that would have to be kept in sync across
+// every entry, relation, alignment, and import write path. Registered before
+// '/:id' so the literal path is not parsed as an entry id.
+// =============================================================================
+router.get(
+  '/dead-ends',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { rows } = await db.query(
+      `${ENTRY_SELECT}
+        WHERE e.society_alignment = 'Opposed'
+          AND NOT EXISTS (
+            SELECT 1 FROM argument_relations ar
+             WHERE ar.target_id = e.id
+               AND ar.relation_type IN ('Counters', 'Rebuts')
+          )
+        ORDER BY e.created_at DESC`
+    );
+
+    // Batch-fetch keywords, mirroring the listing endpoint.
+    const ids = rows.map((r) => r.id);
+    const kwMap = new Map();
+    if (ids.length) {
+      const kwResult = await db.query(
+        `SELECT ek.entry_id, k.tag
+           FROM entry_keywords ek
+           JOIN keywords k ON ek.keyword_id = k.id
+          WHERE ek.entry_id = ANY($1)
+          ORDER BY k.tag`,
+        [ids]
+      );
+      for (const r of kwResult.rows) {
+        if (!kwMap.has(r.entry_id)) kwMap.set(r.entry_id, []);
+        kwMap.get(r.entry_id).push(r.tag);
+      }
+    }
+
+    const entries = rows.map((row) => serialiseEntry(row, kwMap.get(row.id) || []));
+    res.json({ total: entries.length, entries });
   })
 );
 
