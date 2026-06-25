@@ -19,6 +19,9 @@ import { hasPermission } from './auth.js';
 // it reads the same from either entry, so it is stored as a single row.
 const RELATION_TYPES = ['Counters', 'Rebuts', 'Evidence For', 'Updates', 'Related'];
 
+// 'Related' reads the same from both entries, so its direction can't be swapped.
+const SYMMETRIC = new Set(['Related']);
+
 // A small "?" help affordance matching the static forms (see .help-tip in
 // components.css). The explanation rides in data-tip and is also exposed to
 // assistive tech via aria-label.
@@ -47,16 +50,19 @@ function reasonChip(reason, matchedKeywords) {
  * @param {string} entryId        the current (source) entry
  * @param {object|null} session
  * @param {()=>void} onChange      called after a successful add (re-render detail)
+ * @param {string} [entryTitle]   title of the current entry, for the direction preview
  */
-export async function mountRelationEditor(container, entryId, session, onChange) {
+export async function mountRelationEditor(container, entryId, session, onChange, entryTitle) {
   if (!container) return;
   clear(container);
   if (!hasPermission(session, 'Write')) return;
 
+  const selfLabel = entryTitle || 'This entry';
+
   const heading = el('h3', { text: 'Link another entry' });
   const help = el('p', {
     class: 'muted text-sm',
-    text: 'Record how this entry relates to another — counters, rebuts, evidences, updates, or is generally related to it.',
+    text: 'Record how this entry relates to another — counters, rebuts, evidences, updates, or is generally related to it. Use Swap to record the inverse (the other entry → this one) without leaving this page.',
   });
 
   const typeSelect = el('select', { class: 'select', name: 'relation_type' });
@@ -74,8 +80,43 @@ export async function mountRelationEditor(container, entryId, session, onChange)
   // — Searchable target picker (replaces the long <select>) —
   let entries = [];           // { id, title, topic }, sorted by title, self excluded
   let selectedTargetId = '';
+  let direction = 'out';      // 'out' = this → other, 'in' = other → this
   let activeIndex = -1;
   let shown = [];
+
+  // Live preview of the directed relation, mirroring the stored source → target.
+  const previewSrc = el('span', { class: 'rel-preview__node' });
+  const previewVerb = el('span', { class: 'rel-preview__verb' });
+  const previewDst = el('span', { class: 'rel-preview__node' });
+  const swapBtn = el('button', {
+    class: 'btn btn--ghost btn--sm', type: 'button',
+    'aria-label': 'Swap relation direction', text: '⇄ Swap',
+  });
+
+  const renderPreview = () => {
+    const symmetric = SYMMETRIC.has(typeSelect.value);
+    if (symmetric) direction = 'out';
+    const other = selectedTargetId ? searchInput.value : 'the other entry';
+    const srcText = direction === 'in' ? other : selfLabel;
+    const dstText = direction === 'in' ? selfLabel : other;
+    previewSrc.textContent = srcText;
+    previewDst.textContent = dstText;
+    previewSrc.classList.toggle('is-self', direction !== 'in');
+    previewDst.classList.toggle('is-self', direction === 'in');
+    previewVerb.textContent = symmetric
+      ? `◀ ${typeSelect.value} ▶`
+      : `── ${typeSelect.value} ▶`;
+    swapBtn.disabled = symmetric;
+    swapBtn.title = symmetric
+      ? '“Related” is symmetric — direction doesn’t apply.'
+      : 'Swap which entry is the source of the relation.';
+  };
+
+  swapBtn.addEventListener('click', () => {
+    if (SYMMETRIC.has(typeSelect.value)) return;
+    direction = direction === 'in' ? 'out' : 'in';
+    renderPreview();
+  });
 
   const searchInput = el('input', {
     class: 'input', type: 'text', id: 'rel-target',
@@ -108,6 +149,7 @@ export async function mountRelationEditor(container, entryId, session, onChange)
     selectedTargetId = entry.id;
     searchInput.value = entry.title;
     closeList();
+    renderPreview();
   };
   const renderList = (query) => {
     const q = query.trim().toLowerCase();
@@ -137,7 +179,9 @@ export async function mountRelationEditor(container, entryId, session, onChange)
   searchInput.addEventListener('input', () => {
     selectedTargetId = ''; // typing invalidates any prior pick
     renderList(searchInput.value);
+    renderPreview();
   });
+  typeSelect.addEventListener('change', renderPreview);
   searchInput.addEventListener('focus', () => { if (entries.length) renderList(searchInput.value); });
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
@@ -182,11 +226,22 @@ export async function mountRelationEditor(container, entryId, session, onChange)
         noteInput,
       ]),
     ]),
+    el('div', { class: 'field', style: { marginBottom: '0' } }, [
+      el('label', {}, [
+        'Direction ',
+        helpTip('Which entry is the source. Swap to record the inverse — e.g. that the other entry counters this one — without opening its page.'),
+      ]),
+      el('div', { class: 'rel-direction' }, [
+        el('div', { class: 'rel-preview' }, [previewSrc, previewVerb, previewDst]),
+        swapBtn,
+      ]),
+    ]),
     errSlot,
     el('div', { class: 'row', style: { marginTop: '8px' } }, [submit]),
   ]);
 
   container.appendChild(form);
+  renderPreview();
 
   // — Suggested entries to link (discovery aid; titles are easy to forget) —
   // Lists the union of same-topic, shared-keyword, and same-clash-cluster
@@ -260,11 +315,16 @@ export async function mountRelationEditor(container, entryId, session, onChange)
     }
     submit.disabled = true;
     submit.textContent = 'Adding…';
+    // When swapped, the other entry is the source and this entry is the target,
+    // so the row is created on the other entry's relations endpoint.
+    const swapped = direction === 'in' && !SYMMETRIC.has(typeSelect.value);
+    const sourceId = swapped ? selectedTargetId : entryId;
+    const targetId = swapped ? entryId : selectedTargetId;
     try {
-      await apiFetch(`/entries/${encodeURIComponent(entryId)}/relations`, {
+      await apiFetch(`/entries/${encodeURIComponent(sourceId)}/relations`, {
         method: 'POST',
         body: JSON.stringify({
-          target_id: selectedTargetId,
+          target_id: targetId,
           relation_type: typeSelect.value,
           context_note: noteInput.value.trim() || null,
         }),
@@ -273,6 +333,8 @@ export async function mountRelationEditor(container, entryId, session, onChange)
       noteInput.value = '';
       searchInput.value = '';
       selectedTargetId = '';
+      direction = 'out';
+      renderPreview();
       if (typeof onChange === 'function') onChange();
     } catch (err) {
       if (err.code === 'DUPLICATE_RELATION') {

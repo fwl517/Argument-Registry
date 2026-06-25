@@ -333,7 +333,7 @@ function renderEntry(entry) {
 
   // — Clash map + editor —
   renderClashMap(entry.relations);
-  mountRelationEditor($('#relation-editor'), entry.id, session, load);
+  mountRelationEditor($('#relation-editor'), entry.id, session, load, entry.title);
   // — Connected-component mini-graph (auto-fit, no pan/zoom) —
   loadMiniGraph(entry.id);
 

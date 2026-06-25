@@ -884,6 +884,22 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 /* — Relation add form ————————————————————————————————————— */
 .relation-form { display: grid; gap: var(--sp-3); }
+.rel-direction { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.rel-preview {
+  display: flex; align-items: center; gap: var(--sp-2);
+  flex-wrap: wrap; flex: 1 1 240px;
+  font-size: 0.9rem;
+}
+.rel-preview__node {
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 2px var(--sp-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); font-weight: 600; color: var(--ink);
+}
+.rel-preview__node.is-self { border-style: dashed; }
+.rel-preview__verb {
+  white-space: nowrap; font-weight: 600; letter-spacing: 0.02em; color: var(--text-muted);
+}
 
 /* — Auth / centered card layout ——————————————————————————— */
 .auth-wrap {
